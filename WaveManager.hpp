@@ -3,6 +3,7 @@
 #include <vector>
 #include <queue>
 #include <memory>
+#include <string>
 
 struct SpawnEntry {
     EnemyType type;
@@ -37,7 +38,8 @@ public:
     void update(float deltaTime,
         std::vector<std::unique_ptr<Enemy>>& enemies,
         const std::vector<sf::Vector2f>& path1,
-        const std::vector<sf::Vector2f>& path2);
+        const std::vector<sf::Vector2f>& path2,
+        const std::string& enemyTexturePrefix);
 
     void startNextWave();
     void stopCurrentWave();

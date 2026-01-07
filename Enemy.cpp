@@ -9,22 +9,22 @@ namespace {
         float speed;
         int health;
         int reward;
-        std::string texturePrefix;
+        std::string textureName; // base unit name, without map prefix (e.g. "light_tank")
     };
 
-    // Map each enemy type to the correct base filename (without extension)
+    // Map each enemy type to the correct base filename (unit name only, no map prefix)
     const std::map<EnemyType, EnemyConfig> ENEMY_CONFIGS = {
-        {EnemyType::SOLDIER, {"Soldier", 50.0f, 100, 10, "GER"}}, //speed default 50
-        {EnemyType::LIGHT_TANK, {"Light Tank", 40.0f, 250, 25, "GER_light_tank"}},
-        {EnemyType::MEDIUM_TANK, {"Medium Tank", 30.0f, 500, 50, "Ger_med_tank"}},
-        {EnemyType::HEAVY_TANK, {"Heavy Tank", 20.0f, 1000, 100, "GER_heavy_tank"}},
-        {EnemyType::LIGHT_PLANE, {"Light Plane", 80.0f, 150, 30, "GER_light_plane"}},
-        {EnemyType::MEDIUM_PLANE, {"Medium Plane", 70.0f, 300, 60, "GER_med_plane"}},
-        {EnemyType::HEAVY_PLANE, {"Heavy Plane", 60.0f, 600, 120, "GER_heave_plane"}}
+        {EnemyType::SOLDIER,     {"Soldier",      70.0f, 120, 5, "soldier"}},
+        {EnemyType::LIGHT_TANK,  {"Light Tank",   80.0f, 650, 20, "light_tank"}},
+        {EnemyType::MEDIUM_TANK, {"Medium Tank",  60.0f,1000, 40, "med_tank"}},
+        {EnemyType::HEAVY_TANK,  {"Heavy Tank",   43.0f,1350,100, "heavy_tank"}},
+        {EnemyType::LIGHT_PLANE, {"Light Plane",  110.0f, 400, 20, "light_plane"}},
+        {EnemyType::MEDIUM_PLANE,{"Medium Plane", 80.0f, 650, 30, "med_plane"}},
+        {EnemyType::HEAVY_PLANE, {"Heavy Plane",  60.0f, 1100,90, "heavy_plane"}}
     };
 }
 
-Enemy::Enemy(EnemyType type, const std::vector<sf::Vector2f>& path, int pathIndex)
+Enemy::Enemy(EnemyType type, const std::vector<sf::Vector2f>& path, int pathIndex, const std::string& textureBaseName)
     : type(type),
       path(path),
       currentWaypoint(1), // zaczynamy od pierwszego waypointa (0 to start)
@@ -36,7 +36,6 @@ Enemy::Enemy(EnemyType type, const std::vector<sf::Vector2f>& path, int pathInde
       maxHealth(0),
       reward(0)
 {
-
     if (path.empty()) {
         std::cerr << "Error: Enemy created with empty path!\n";
         return;
@@ -48,8 +47,17 @@ Enemy::Enemy(EnemyType type, const std::vector<sf::Vector2f>& path, int pathInde
     // Skonfiguruj wed³ug typu
     configureByType();
 
-    // Za³aduj tekstury
-    loadTextures(ENEMY_CONFIGS.at(type).texturePrefix);
+    // Build final texture base name. If a map prefix was provided, prefix it (e.g. "GER" + "_" + "light_tank" => "GER_light_tank").
+    const auto& cfg = ENEMY_CONFIGS.at(type);
+    std::string baseNameToUse;
+    if (!textureBaseName.empty()) {
+        baseNameToUse = textureBaseName + "_" + cfg.textureName;
+    } else {
+        baseNameToUse = cfg.textureName; // fallback: try unit name alone
+    }
+
+    // Load textures using the composed base name
+    loadTextures(baseNameToUse);
 
     // Ustaw pocz¹tkowy kierunek i teksturê
     if (path.size() > 1) {
@@ -102,7 +110,7 @@ void Enemy::configureByType() {
 }
 
 bool Enemy::loadTextures(const std::string& baseName) {
-    // First try single-file texture (e.g. GER_light_tank.png)
+    // First try single-file texture (e.g. GER_light_tank.png or light_tank.png)
     {
         auto tex = std::make_shared<sf::Texture>();
         std::string singlePath = "assets/enemies/" + baseName + ".png";
@@ -122,7 +130,7 @@ bool Enemy::loadTextures(const std::string& baseName) {
         }
     }
 
-    // If single file not found, try directional variants (e.g. GER_NORTH.png)
+    // If single file not found, try directional variants (e.g. GER_light_tank_NORTH.png)
     std::map<Direction, std::string> dirNames = {
         {Direction::NORTH, baseName + "_NORTH.png"},
         {Direction::EAST,  baseName + "_EAST.png"},
@@ -171,14 +179,12 @@ bool Enemy::loadTextures(const std::string& baseName) {
 void Enemy::setTextureForDirection(Direction dir) {
     auto it = textures.find(dir);
     if (it != textures.end() && it->second) {
-        // jeœli sprite nie istnieje, utwórz go z tej tekstury (SFML 3 wymaga tekstury w konstruktorze)
         if (!sprite) {
             sprite = std::make_unique<sf::Sprite>(*it->second);
         } else {
             sprite->setTexture(*it->second);
         }
 
-        // If animated, set initial texture rect for currentFrame
         if (animated && frameSize.x > 0 && frameSize.y > 0) {
             int left = (currentFrame % frameCount) * frameSize.x;
             sprite->setTextureRect(sf::IntRect({ left, 0 }, { frameSize.x, frameSize.y }));
