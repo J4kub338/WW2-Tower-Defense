@@ -6,43 +6,51 @@
 const std::map<TowerType, TowerConfig> TOWER_CONFIGS = {
     {TowerType::INFANTRY_POST, {
         "Stanowisko Piechoty",
-        120.0f,  // range
-        10,      // damage
+        200.0f,  // range
+        15,      // damage
         5.0f,    // fireRate
-        80,      // cost
+        100,      // cost
         "assets/towers/Infantry_post1.png",
-        120,     // upgradeCost
-        {128.0f, 128.0f}  // size
+        100,     // upgradeCost
+        {128.0f, 128.0f},  // size
+        5,       // upgradeDamageDelta
+        1.0f     // upgradeFireRateDelta
     }},
     {TowerType::MACHINE_GUN, {
         "Karabin Maszynowy",
-        150.0f,  // range
-        15,      // damage
-        10.0f,   // fireRate
-        100,     // cost
+        230.0f,  // range
+        10,      // damage
+        6.0f,   // fireRate
+        180,     // cost
         "assets/towers/Machine_gun1.png",
         150,     // upgradeCost
-        {140.0f, 140.0f}  // size
+        {140.0f, 140.0f},  // size
+        7,       // upgradeDamageDelta
+        1.5f     // upgradeFireRateDelta
     }},
     {TowerType::ARTILLERY, {
         "Artyleria",
-        300.0f,  // range
-        50,      // damage
-        0.5f,    // fireRate
+        320.0f,  // range
+        100,      // damage
+        1.0f,    // fireRate
         300,     // cost
         "assets/towers/Artillery1.png",
-        400,     // upgradeCost
-        {164.0f, 164.0f}  // size
+        300,     // upgradeCost
+        {164.0f, 164.0f},  // size
+        15,      // upgradeDamageDelta
+        0.2f     // upgradeFireRateDelta
     }},
     {TowerType::AA_GUN, {
         "Dzialo Przeciwlotnicze",
-        200.0f,  // range
-        25,      // damage
+        260.0f,  // range
+        30,      // damage
         3.0f,    // fireRate
         250,     // cost
         "assets/towers/AA_gun1.png",
         350,     // upgradeCost
-        {140.0f, 140.0f}  // size
+        {140.0f, 140.0f},  // size
+        10,      // upgradeDamageDelta
+        0.2f     // upgradeFireRateDelta
     }}
 };
 
@@ -154,9 +162,12 @@ void Tower::toggleRangeDisplay(bool show) {
 }
 
 void Tower::upgrade() {
+    if (!canUpgrade()) return;
     level++;
-    config.damage = static_cast<int>(config.damage * 1.5f);
-    config.range *= 1.2f;
+    config.damage += config.upgradeDamageDelta;
+    config.fireRate += config.upgradeFireRateDelta;
+    // Optionally adjust range slightly or keep constant
+    // config.range *= 1.05f;
     updateVisuals();
 }
 

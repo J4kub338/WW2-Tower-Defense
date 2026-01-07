@@ -28,12 +28,21 @@ public:
     void addPathPoint(const Vector2f& point);
     void addPathPoint2(const Vector2f& point);
 
+    //czyszczenie œcie¿ek i obszarów budowy
+    void clearPathsAndBuildAreas();
+
     //dodawanie obszarów budowania (wie¿)
     void addBuildArea(float x, float y, float width, float height);
 
     bool canBuildHere(const Vector2f& position) const;
-    // Próbuje zarezerwowaæ obszar budowy. Jeœli dostêpny, zwraca true i ustawia outCenter na œrodek obszaru
+    // Próbuje zarezerwowaæ obszar budowy. Je¿eli dostêpny, zwraca true i ustawia outCenter na œrodek obszaru
     bool tryClaimBuildArea(const Vector2f& position, Vector2f& outCenter);
+    // Pobiera œrodek obszaru budowy bez jego rezerwacji (u³atwia UI), zwraca false jeœli nie znaleziono
+    bool getBuildAreaCenter(const Vector2f& position, Vector2f& outCenter) const;
+    // Oznacza obszar budowy jako zajêty na podstawie jego œrodka; zwraca false jeœli nie znaleziono
+    bool occupyBuildAreaAtCenter(const Vector2f& center);
+    // Zwalnia obszar budowy (oznacza niezajêty) na podstawie jego œrodka; zwraca false jeœli nie znaleziono
+    bool freeBuildAreaAtCenter(const Vector2f& center);
 
     //rysowanie
     void draw(RenderWindow& window) const;
