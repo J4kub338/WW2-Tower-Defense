@@ -9,6 +9,7 @@
 #include "SFML/Graphics/Font.hpp"
 #include "Projectile.hpp"
 #include "Sounds.hpp"
+#include "Menu.hpp"
 
 
 using namespace sf;
@@ -26,6 +27,10 @@ struct MapInfo {
 class Game {
 private:
     sf::RenderWindow window;
+    // --- 2. Integracja Menu ---
+    std::unique_ptr<Menu> menu; // Menu wewn¹trz gry
+    bool isMenuState = true;    // Czy jesteœmy w menu?
+    // --------------------------
     Map map;
     std::vector<Tower> towers;
     std::vector<std::unique_ptr<Enemy>> enemies;
