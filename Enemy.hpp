@@ -12,7 +12,9 @@ enum class EnemyType {
     HEAVY_TANK,
     LIGHT_PLANE,
     MEDIUM_PLANE,
-    HEAVY_PLANE
+    HEAVY_PLANE,
+    MINI_BOSS,
+    BOSS
 };
 
 enum class Direction {
@@ -56,8 +58,8 @@ private:
     sf::RectangleShape healthBarFill;
 
 public:
-    Enemy(EnemyType type, const std::vector<sf::Vector2f>& path, int pathIndex = 0);
-
+    // Added optional textureBaseName parameter for per-map overrides
+    Enemy(EnemyType type, const std::vector<sf::Vector2f>& path, int pathIndex = 0, const std::string& textureBaseName = "");
     // £adowanie tekstur (teraz zwraca true jeœli wszystkie pliki za³adowane)
     bool loadTextures(const std::string& baseName);
     void setTextureForDirection(Direction dir);

@@ -1,8 +1,15 @@
 #include "Projectile.hpp"
 #include <cmath>
 
-Projectile::Projectile(const sf::Vector2f& pos, const sf::Vector2f& dir, float spd, int dmg, const sf::Texture* tex, float maxRange)
-    : position(pos), origin(pos), speed(spd), damage(dmg), maxRange(maxRange) {
+Projectile::Projectile(const sf::Vector2f& pos, const sf::Vector2f& dir, float spd, int dmg, const sf::Texture* tex, float maxRange,
+                       float explosionRadius, float edgeDamageMultiplier)
+    : position(pos),
+      origin(pos),
+      speed(spd),
+      damage(dmg),
+      maxRange(maxRange),
+      explosionRadius(explosionRadius),
+      edgeDamageMultiplier(edgeDamageMultiplier) {
     sf::Vector2f n = dir;
     float len = std::sqrt(n.x*n.x + n.y*n.y);
     if (len > 0.0f) n /= len;

@@ -1,0 +1,43 @@
+############ WW2 TOWER DEFENSE ############
+
+ZAMYSŁ GRY
+
+Gra typu tower defense osadzona w realiach drugiej wojny światowej. Celem gracza jest przeżycie napierających fal wrogów. Gracz do dyspozycji ma wieże obronne, różnego typu, możliwe do rozstawienia w z góry narzuconych miejscach, które strzelają w zbliżających się przeciwników. Gra posiada 6 grywalnych map, gdzie każda z kolei przedstawia inne ważne momenty z historii drugiej wojny światowej. W menu można wybrać dowolną mapę, lecz poleca się zacząć od Kampanii wrześniowej i zagrać w kolejności chronologicznej. Pozwala to doznać zwiększającą się technologię zbrojeniową na przestrzeni lat. Z każdą mapą doświadczać będziemy trudniejszych do pokonania przeciwników z różnych państw. Każda z nacji posiada swoje własne unikatowe oraz autentyczne modele jednostek. Podczas przechodzenia gry wcielamy się w różne strony konfliktu. Nasza narodowość zasygnalizowana jest flagą przy naszej bazie, której musimy bronić. Za zlikwidowanie przeciwnika dostajemy monety, które możemy wykorzystać do budowy nowych wież, jak i ulepszenia już istniejących. Aktualny poziom ulepszenia sygnalizowany jest odznaką. Gracz posiada 100 HP. Gdy licznik zdrowia osiągnie zero przegrywamy. Każda jednostka odbiera odmienną liczbę HP.
+W celu włączenia fali należy wcisnąć zielony przycisk w prawym dolnym rogu ekranu.
+
+====================================================================================================================
+
+STEROWANIE
+
+Lewy przycisk myszy - służy do obsługi większości funkcjonalności ( budowa wież, ulepszanie, obsługa menu )
+R - wyświetla obszar zasięgu działania wież
+ESC - włączenie menu
+
+====================================================================================================================
+
+WIEŻE
+
+				Obrażenia 	Zasięg 		Szybkostrzelność 	Koszt		Obrażenia obszarowe	Koszt ulepszenia		 Profity ulepszenia
+
+1. Stanowisko piechoty 		   15		 200             4 strzały/sek           100			NIE		      150		+1 do szybkostrzelności +5 do obrażeń
+2. Karabin maszynowy		   10		 230             6 strzałów/sek		 180			NIE		      220		+0.5 do szybkostrzelności +4 do obrażeń
+3. Działko przeciwlotnicze	   30 		 260             3 strzały/sek           250                    NIE		      320		+0.2 do szybkostrzelności +10 do obrażeń
+4. Artyleria                       100           320             1 strzał/sek            300                    TAK 		      450		+0.2 do szybkostrzelności +15 do obrażeń
+
+Pocisk artylerii po trafieniu w przeciwnika wybucha i zadaje dodatkowe 35% obrażeń wszystkim przeciwnikom w obszarze rażenia.
+
+====================================================================================================================
+
+PRZECIWNICY
+
+			Zdrowie		Prędkość poruszania	Nagroda za zabójstwo		
+1. Piechota		  120			70			   5
+2. Czołg lekki 		  750			80			  20
+3. Czołg średni 	 1100			70			  40
+4. Czołg ciężki		 1500			55			  60
+5. Samolot lekki	  500			90			  20
+6. Samolot średni	  750			80			  30
+7. Samolot ciężki	 1250			70			  50
+8. Mini boss		 7500			30			 450
+9. Boss			18000			25			1000
+

@@ -23,6 +23,15 @@ struct TowerConfig {
     std::string textureFile; // Œcie¿ka do tekstury
     int upgradeCost;    // Koszt ulepszenia
     sf::Vector2f size;  // Rozmiar sprite (px)
+    // upgrade deltas per level (applied each time, up to max level)
+    int upgradeDamageDelta;
+    float upgradeFireRateDelta;
+
+    // AoE (used e.g. by artillery). If radius <= 0 => no AoE.
+    float explosionRadius = 0.0f;          // promieñ obra¿eñ obszarowych (px)
+    float edgeDamageMultiplier = 1.0f;     // mno¿nik obra¿eñ na brzegu (0..1), œrodek = 1.0
+
+    int level = 1;
 };
 
 class Tower {
@@ -33,6 +42,7 @@ private:
     TowerType type;
     TowerConfig config;
     int level;
+    static constexpr int MaxLevel = 4;
     bool showRange;
     sf::Vector2f centerPos; // przechowuje œrodek wie¿y (w pikselach)
 
@@ -64,11 +74,18 @@ public:
     sf::FloatRect getBounds() const;
     float getRange() const;
     int getDamage() const;
+    float getFireRate() const { return config.fireRate; }
     TowerType getType() const;
     const std::string& getName() const;
     int getCost() const;
     int getUpgradeCost() const;
+    int getLevel() const { return level; }
+    bool canUpgrade() const { return level <= MaxLevel; }
     std::string getTexture() const;
+
+    // AoE getters
+    float getExplosionRadius() const { return config.explosionRadius; }
+    float getEdgeDamageMultiplier() const { return config.edgeDamageMultiplier; }
 
     // Logika
     void upgrade();

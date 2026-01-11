@@ -131,9 +131,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Button.cpp" />
     <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="ExplosionEffect.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="map.cpp" />
+    <ClCompile Include="Menu.cpp" />
     <ClCompile Include="Projectile.cpp" />
     <ClCompile Include="Sounds.cpp" />
     <ClCompile Include="Tower Defense.cpp" />
@@ -141,13 +144,24 @@
     <ClCompile Include="WaveManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Button.hpp" />
     <ClInclude Include="Enemy.hpp" />
+    <ClInclude Include="ExplosionEffect.hpp" />
     <ClInclude Include="Game.hpp" />
     <ClInclude Include="Map.hpp" />
+    <ClInclude Include="Menu.hpp" />
     <ClInclude Include="Projectile.hpp" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Sounds.hpp" />
     <ClInclude Include="Tower.hpp" />
     <ClInclude Include="WaveManager.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Tower_Defense.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon1.ico" />
+    <Image Include="icon2.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
