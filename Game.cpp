@@ -57,24 +57,21 @@ void Game::loadMapByIndex(int index) {
     // For now we only store enemy texture prefix in map info and pass it when spawning enemies via WaveManager.
     // WaveManager currently creates enemies without custom texture names. A full implementation would propagate texture overrides when creating Enemy instances.
 }
+
 Game::Game()
-// Ustawiamy okno na sztywno 2560x1600 w trybie okienkowym (Default)
-    : window(sf::VideoMode({ 2560, 1600 }), "Tower Defense - WWII", sf::Style::Default, sf::State::Windowed),
-    selectedTowerType(TowerType::INFANTRY_POST),
-    showAllRanges(false),
-    isRunning(true),
-    HPText(font),
-    CoinsText(font),
-    lowCoinsText(font),
-    WaveText(font),
-    KillsText(font),
-    MaxLevelText(font)
+    : window(sf::VideoMode({ 2560, 1600 }), "Tower Defense - WWII", State::Fullscreen),
+      selectedTowerType(TowerType::INFANTRY_POST),
+      showAllRanges(false),
+      isRunning(true),
+      HPText(font),
+      CoinsText(font),
+      lowCoinsText(font),
+	  WaveText(font),
+	  KillsText(font),
+	  MaxLevelText(font)
 {
-    menu = std::make_unique<Menu>();
-    isMenuState = true; // Zaczynamy w menu
-    soundManager.setBackgroundVolume(50.0f);
     // Setup available maps (basic example)
-    //Kampania wrzeœniowa
+    //Kampania wrzeÅ“niowa
     MapInfo m1;
 	m1.playerCoins = 600;
     m1.mapFile = "maps/map1.txt";
@@ -383,7 +380,466 @@ Game::Game()
 	m4.waves.push_back(waveD5);
     availableMaps.push_back(m4);
 
-	//Przedmieœcia Stalingradu
+	//PrzedmieÅ“cia Stalingradu
+    MapInfo m5;
+    m5.mapFile = "maps/map5.txt";
+    m5.enemyTexturePrefix = "GER";
+    m5.Soundtracknumber = 4;
+    m5.playerCoins = 1500;
+    Wave waveE1;
+    waveE1.waveNumber = 1;
+    waveE1.entries.push_back({ EnemyType::SOLDIER, 5, 0.9f, 0 });
+    waveE1.entries.push_back({ EnemyType::LIGHT_TANK, 3, 2.0f, 1 });
+    waveE1.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 2.3f, 0 });
+    waveE1.entries.push_back({ EnemyType::HEAVY_TANK, 3, 3.0f, 1 });
+    waveE1.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 2.0f, 0 });
+    waveE1.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 2.6f, 1 });
+    waveE1.entries.push_back({ EnemyType::HEAVY_PLANE, 3, 3.0f, 0 });
+	m5.waves.push_back(waveE1);
+	Wave waveE2;   
+	waveE2.waveNumber = 2;
+	waveE2.entries.push_back({ EnemyType::SOLDIER, 10, 0.7f, 0 });
+	waveE2.entries.push_back({ EnemyType::LIGHT_TANK, 5, 1.5f, 1 });
+	waveE2.entries.push_back({ EnemyType::LIGHT_TANK, 7, 1.5f, 0 });
+	waveE2.entries.push_back({ EnemyType::LIGHT_PLANE, 5, 1.0f, 0 });
+	waveE2.entries.push_back({ EnemyType::MEDIUM_TANK, 5, 2.5f, 0 });
+	waveE2.entries.push_back({ EnemyType::LIGHT_PLANE, 5, 1.5f, 0 });
+	waveE2.entries.push_back({ EnemyType::MEDIUM_PLANE, 5, 2.5f, 1 });
+	waveE2.entries.push_back({ EnemyType::HEAVY_PLANE, 3, 3.5f, 0 });
+    waveE2.entries.push_back({ EnemyType::HEAVY_TANK, 3, 3.5f, 1 });
+    waveE2.entries.push_back({ EnemyType::HEAVY_TANK, 3, 3.5f, 0 });
+	m5.waves.push_back(waveE2);
+	Wave waveE3;
+	waveE3.waveNumber = 3;
+    waveE3.entries.push_back({ EnemyType::HEAVY_PLANE, 2, 3.5f, 1 });
+	waveE3.entries.push_back({ EnemyType::SOLDIER, 20, 0.4f, 0 });
+    waveE3.entries.push_back({ EnemyType::LIGHT_PLANE, 7, 1.5f, 0 });
+	waveE3.entries.push_back({ EnemyType::LIGHT_TANK, 7, 2.0f, 1 });
+    waveE3.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 3.0f, 0 });
+	waveE3.entries.push_back({ EnemyType::MEDIUM_PLANE, 4, 2.5f, 1 });
+	waveE3.entries.push_back({ EnemyType::MEDIUM_TANK, 7, 3.0f, 0 });
+	waveE3.entries.push_back({ EnemyType::HEAVY_TANK, 2, 4.0f, 1 });
+	waveE3.entries.push_back({ EnemyType::SOLDIER, 20, 0.4f, 1 });
+	waveE3.entries.push_back({ EnemyType::LIGHT_PLANE, 7, 1.5f, 0 });
+	waveE3.entries.push_back({ EnemyType::MEDIUM_PLANE, 7, 2.5f, 1 });
+    waveE3.entries.push_back({ EnemyType::MEDIUM_TANK, 5, 4.0f, 1 });
+	waveE3.entries.push_back({ EnemyType::HEAVY_PLANE, 5, 3.5f, 0 });
+	waveE3.entries.push_back({ EnemyType::SOLDIER, 20, 0.4f, 1 });
+    waveE3.entries.push_back({ EnemyType::LIGHT_TANK, 7, 2.0f, 0 });
+	waveE3.entries.push_back({ EnemyType::HEAVY_TANK, 4, 4.5f, 0 });
+	m5.waves.push_back(waveE3);
+	Wave waveE4;
+	waveE4.waveNumber = 4;
+	waveE4.entries.push_back({ EnemyType::SOLDIER, 30, 0.3f, 0 });
+	waveE4.entries.push_back({ EnemyType::LIGHT_PLANE, 10, 1.5f, 0 });
+	waveE4.entries.push_back({ EnemyType::LIGHT_TANK, 15, 3.0f, 1 });
+	waveE4.entries.push_back({ EnemyType::LIGHT_TANK, 15, 3.0f, 0 });
+	waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 7, 2.5f, 1 });
+	waveE4.entries.push_back({ EnemyType::MEDIUM_TANK, 10, 5.0f, 0 });
+	waveE4.entries.push_back({ EnemyType::HEAVY_TANK, 7, 9.0f, 0 });
+	waveE4.entries.push_back({ EnemyType::LIGHT_PLANE, 10, 1.5f, 0 });
+	waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 10, 2.5f, 1 });
+	waveE4.entries.push_back({ EnemyType::HEAVY_PLANE, 7, 3.5f, 0 });
+	waveE4.entries.push_back({ EnemyType::SOLDIER, 30, 0.3f, 1 });
+	waveE4.entries.push_back({ EnemyType::HEAVY_TANK, 10, 9.0f, 1 });
+	m5.waves.push_back(waveE4);
+	Wave waveE5;
+	waveE5.waveNumber = 5;
+	waveE5.entries.push_back({ EnemyType::SOLDIER, 40, 0.2f, 0 });
+	waveE5.entries.push_back({ EnemyType::LIGHT_TANK, 10, 2.0f, 1 });
+	waveE5.entries.push_back({ EnemyType::MEDIUM_PLANE, 10, 2.5f, 0 });
+	waveE5.entries.push_back({ EnemyType::SOLDIER, 40, 0.2f, 1 });
+	waveE5.entries.push_back({ EnemyType::HEAVY_TANK, 5, 3.0f, 1 });
+	waveE5.entries.push_back({ EnemyType::HEAVY_PLANE, 5, 3.5f, 0 });
+	waveE5.entries.push_back({ EnemyType::LIGHT_PLANE, 20, 2.2f, 0 });
+	waveE5.entries.push_back({ EnemyType::MEDIUM_TANK, 10, 2.5f, 0 });
+	waveE5.entries.push_back({ EnemyType::LIGHT_TANK, 20, 2.0f, 1 });
+	waveE5.entries.push_back({ EnemyType::HEAVY_TANK, 8, 8.0f, 1 });
+	m5.waves.push_back(waveE5);
+	Wave waveE6;
+	waveE6.waveNumber = 6;
+	waveE6.entries.push_back({ EnemyType::SOLDIER, 20, 0.2f, 0 });
+	waveE6.entries.push_back({ EnemyType::SOLDIER, 20, 0.2f, 1 });
+	waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 1 });
+	waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 0 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 0 });
+    waveE6.entries.push_back({ EnemyType::LIGHT_PLANE, 9, 2.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 0 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 0 });
+    waveE6.entries.push_back({ EnemyType::LIGHT_TANK, 6, 2.0f, 0 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 0 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 0 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 1 });
+    m5.waves.push_back(waveE6);
+	availableMaps.push_back(m5);
+
+    // Load selected map
+    loadMapByIndex(selectedMapIndex);
+
+    // reset wave manager and copy waves from map info
+    waveManager = WaveManager();
+    for (const auto& w : info.waves) {
+        waveManager.addWave(w);
+    }
+
+    // Start or switch background music for selected map
+    soundManager.playBackground("music/track" + std::to_string(info.Soundtracknumber) + ".mp3", true, 60.0f);
+
+    // store current map prefix for spawn-time use
+    currentMapEnemyPrefix = info.enemyTexturePrefix;
+
+    // apply map-specific starting coins
+    PlayerCoins = info.playerCoins;
+    CoinsText.setString(std::to_string(PlayerCoins));
+    CoinsText.setOrigin({ CoinsText.getLocalBounds().size.x / 2.0f, CoinsText.getLocalBounds().size.y / 2.0f });
+
+    KillsCount = 0;
+	KillsText.setString(to_string(KillsCount));
+	// Reset current wave number
+	currentWaveNumber = 0;
+	numberOfWaves = static_cast<int>(info.waves.size());
+	WaveText.setString(to_string(currentWaveNumber) + "/" + to_string(info.waves.size()));
+	
+
+    gameOver = false;
+    victory = false;
+
+    // For now we only store enemy texture prefix in map info and pass it when spawning enemies via WaveManager.
+    // WaveManager currently creates enemies without custom texture names. A full implementation would propagate texture overrides when creating Enemy instances.
+}
+Game::Game()
+// Ustawiamy okno na sztywno 2560x1600 w trybie okienkowym (Default)
+    : window(sf::VideoMode({ 2560, 1600 }), "Tower Defense - WWII", sf::Style::Default, sf::State::Windowed),
+    selectedTowerType(TowerType::INFANTRY_POST),
+    showAllRanges(false),
+    isRunning(true),
+    HPText(font),
+    CoinsText(font),
+    lowCoinsText(font),
+    WaveText(font),
+    KillsText(font),
+    MaxLevelText(font)
+{
+    menu = std::make_unique<Menu>();
+    isMenuState = true; // Zaczynamy w menu
+    soundManager.setBackgroundVolume(50.0f);
+    // Setup available maps (basic example)
+    //Kampania wrzeÅ“niowa
+    MapInfo m1;
+	m1.playerCoins = 600;
+    m1.mapFile = "maps/map1.txt";
+    m1.enemyTexturePrefix = "GER";
+	m1.Soundtracknumber = 3;
+    // example waves - these would normally be loaded from a per-map data file
+    Wave waveA1;
+    waveA1.waveNumber = 1; 
+    waveA1.entries.push_back({ EnemyType::SOLDIER, 3, 0.5f, 0 });
+    waveA1.entries.push_back({ EnemyType::SOLDIER, 3, 0.5f, 1 });
+    waveA1.entries.push_back({ EnemyType::SOLDIER, 3, 0.5f, 0 });
+    waveA1.entries.push_back({ EnemyType::SOLDIER, 3, 0.5f, 0 });
+    waveA1.entries.push_back({ EnemyType::SOLDIER, 3, 0.5f, 1 });
+    waveA1.entries.push_back({ EnemyType::SOLDIER, 3, 0.5f, 0 });
+    m1.waves.push_back(waveA1);
+	Wave waveA2;
+	waveA2.waveNumber = 2;
+    waveA2.entries.push_back({ EnemyType::SOLDIER, 3, 0.5f, 0 });
+    waveA2.entries.push_back({ EnemyType::SOLDIER, 3, 0.5f, 1 });
+    waveA2.entries.push_back({ EnemyType::LIGHT_TANK, 2, 1.0f, 1 });
+    waveA2.entries.push_back({ EnemyType::LIGHT_TANK, 2, 1.0f, 0 });
+    waveA2.entries.push_back({ EnemyType::SOLDIER, 5, 0.8f, 0 });
+    waveA2.entries.push_back({ EnemyType::SOLDIER, 5, 0.8f, 1 });
+	m1.waves.push_back(waveA2);
+    Wave waveA3;
+	waveA3.waveNumber = 3;
+	waveA3.entries.push_back({ EnemyType::SOLDIER, 5, 0.7f, 0 });
+    waveA3.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.5f, 1 });
+    waveA3.entries.push_back({ EnemyType::LIGHT_PLANE, 2, 2.0f, 0 });
+    waveA3.entries.push_back({ EnemyType::SOLDIER, 5, 0.4f, 1 });
+    waveA3.entries.push_back({ EnemyType::LIGHT_TANK, 3, 1.5f, 0 });
+	waveA3.entries.push_back({ EnemyType::LIGHT_PLANE, 2, 2.0f, 1 });
+	waveA3.entries.push_back({ EnemyType::SOLDIER, 5, 0.7f, 1 });
+	m1.waves.push_back(waveA3);
+	Wave waveA4;
+	waveA4.waveNumber = 4;
+    waveA4.entries.push_back({ EnemyType::LIGHT_TANK, 4, 2.0f, 0 });
+    waveA4.entries.push_back({ EnemyType::LIGHT_TANK, 6, 3.0f, 1 });
+    waveA4.entries.push_back({ EnemyType::MEDIUM_PLANE, 4, 2.5f, 0 });
+    waveA4.entries.push_back({ EnemyType::MEDIUM_PLANE, 2, 3.0f, 1 });
+	waveA4.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.5f, 0 });
+	waveA4.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.5f, 1 });
+	waveA4.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.5f, 0 });
+	waveA4.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.5f, 1 });
+	waveA4.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.5f, 0 });
+	waveA4.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.5f, 1 });
+	waveA4.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.5f, 0 });
+	waveA4.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.5f, 1 });
+	waveA4.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.5f, 0 });
+	waveA4.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.5f, 1 });
+	m1.waves.push_back(waveA4);
+	availableMaps.push_back(m1);
+
+    //Bitwa w Afryce
+    MapInfo m2;
+    m2.mapFile = "maps/map2.txt";
+    m2.enemyTexturePrefix = "UK";
+    m2.playerCoins = 850;
+    m2.Soundtracknumber = 2;
+    Wave waveB1;
+    waveB1.waveNumber = 1; 
+    waveB1.entries.push_back({ EnemyType::SOLDIER, 5, 0.9f, 0 });
+    waveB1.entries.push_back({ EnemyType::LIGHT_TANK, 3, 2.0f, 1 });
+    waveB1.entries.push_back({ EnemyType::LIGHT_TANK, 3, 2.3f, 0 });
+    waveB1.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 3.0f, 1 });
+    waveB1.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 2.0f, 0 });
+    waveB1.entries.push_back({ EnemyType::SOLDIER, 3, 2.6f, 1 });
+    waveB1.entries.push_back({ EnemyType::SOLDIER, 3, 3.0f, 0 });
+    m2.waves.push_back(waveB1);
+	Wave waveB2;
+	waveB2.waveNumber = 2;
+	waveB2.entries.push_back({ EnemyType::SOLDIER, 10, 0.4f, 0 });
+	waveB2.entries.push_back({ EnemyType::SOLDIER, 10, 0.4f, 1 });
+	waveB2.entries.push_back({ EnemyType::LIGHT_TANK, 4, 2.5f, 0 });
+	waveB2.entries.push_back({ EnemyType::LIGHT_TANK, 4, 2.5f, 1 });    
+	waveB2.entries.push_back({ EnemyType::LIGHT_PLANE, 4, 1.5f, 0 });
+	waveB2.entries.push_back({ EnemyType::LIGHT_PLANE, 4, 1.5f, 1 });
+	waveB2.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 2.9f, 0 });
+	waveB2.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 2.9f, 1 });
+	waveB1.entries.push_back({ EnemyType::SOLDIER, 3, 0.4f, 0 });
+	waveB2.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 2.0f, 1 });
+	waveB2.entries.push_back({ EnemyType::LIGHT_PLANE, 2, 1.5f, 0 });
+	waveB2.entries.push_back({ EnemyType::SOLDIER, 3, 0.4f, 1 });
+	waveB2.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 2.0f, 0 });
+	m2.waves.push_back(waveB2);
+	Wave waveB3;
+	waveB3.waveNumber = 3;
+	waveB3.entries.push_back({ EnemyType::SOLDIER, 3, 0.3f, 0 });
+	waveB3.entries.push_back({ EnemyType::SOLDIER, 3, 0.3f, 1 });
+	waveB3.entries.push_back({ EnemyType::MEDIUM_TANK, 4, 2.5f, 0 });
+	waveB3.entries.push_back({ EnemyType::LIGHT_TANK, 4, 2.5f, 1 });
+	waveB3.entries.push_back({ EnemyType::MEDIUM_TANK, 2, 3.5f, 0 });
+	waveB3.entries.push_back({ EnemyType::HEAVY_TANK, 2, 3.5f, 1 });
+	waveB3.entries.push_back({ EnemyType::MEDIUM_PLANE, 4, 1.5f, 0 });
+	waveB3.entries.push_back({ EnemyType::LIGHT_PLANE, 4, 1.5f, 1 });
+	waveB3.entries.push_back({ EnemyType::SOLDIER, 10, 2.9f, 0 });
+	waveB3.entries.push_back({ EnemyType::HEAVY_TANK, 3, 3.9f, 1 });
+	waveB3.entries.push_back({ EnemyType::HEAVY_TANK, 3, 3.9f, 0 });
+	m2.waves.push_back(waveB3);
+	Wave waveB4;
+	waveB4.waveNumber = 4;
+	waveB4.entries.push_back({ EnemyType::SOLDIER, 2, 0.2f, 0 });
+	waveB4.entries.push_back({ EnemyType::SOLDIER, 2, 0.2f, 1 });
+	waveB4.entries.push_back({ EnemyType::SOLDIER, 2, 0.2f, 0 });
+	waveB4.entries.push_back({ EnemyType::SOLDIER, 2, 0.2f, 1 });
+	waveB4.entries.push_back({ EnemyType::LIGHT_PLANE, 4, 0.5f, 0 });
+	waveB4.entries.push_back({ EnemyType::SOLDIER, 2, 0.2f, 0 });
+	waveB4.entries.push_back({ EnemyType::SOLDIER, 2, 0.2f, 1 });
+	waveB4.entries.push_back({ EnemyType::SOLDIER, 2, 0.2f, 0 });
+	waveB4.entries.push_back({ EnemyType::MEDIUM_TANK, 4, 3.0f, 1 });
+	waveB4.entries.push_back({ EnemyType::HEAVY_PLANE, 3, 3.0f, 0 });
+	waveB4.entries.push_back({ EnemyType::MEDIUM_PLANE, 5, 2.0f, 1 });
+	waveB4.entries.push_back({ EnemyType::HEAVY_PLANE, 4, 3.0f, 1 });
+	waveB4.entries.push_back({ EnemyType::SOLDIER, 5, 0.4f, 0 });
+	waveB4.entries.push_back({ EnemyType::HEAVY_TANK, 3, 5.0f, 0 });
+	waveB4.entries.push_back({ EnemyType::HEAVY_PLANE, 3, 3.0f, 1 });
+	waveB4.entries.push_back({ EnemyType::LIGHT_TANK, 5, 1.8f, 1 });
+	m2.waves.push_back(waveB4);
+	Wave waveB5;
+	waveB5.waveNumber = 5;
+	waveB5.entries.push_back({ EnemyType::SOLDIER, 20, 0.2f, 0 });
+	waveB5.entries.push_back({ EnemyType::LIGHT_TANK, 5, 1.5f, 1 });
+	waveB5.entries.push_back({ EnemyType::SOLDIER, 30, 0.2f, 1 });
+	waveB5.entries.push_back({ EnemyType::MEDIUM_TANK, 5, 2.5f, 0 });
+    waveB5.entries.push_back({ EnemyType::LIGHT_PLANE, 5, 1.5f, 1 });
+	waveB5.entries.push_back({ EnemyType::SOLDIER, 10, 0.2f, 0 });
+	waveB5.entries.push_back({ EnemyType::HEAVY_TANK, 4, 3.5f, 1 });
+	waveB5.entries.push_back({ EnemyType::MEDIUM_PLANE, 4, 2.0f, 0 });
+	waveB5.entries.push_back({ EnemyType::SOLDIER, 10, 0.2f, 1 });
+	waveB5.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 3.2f, 1 });
+	waveB5.entries.push_back({ EnemyType::HEAVY_TANK, 4, 3.5f, 0 });
+	waveB5.entries.push_back({ EnemyType::LIGHT_PLANE, 20, 2.0f, 0 });
+	m2.waves.push_back(waveB5);
+	availableMaps.push_back(m2);
+    
+
+	//Operacja Barbarossa
+    MapInfo m3;
+	m3.mapFile = "maps/map3.txt";
+	m3.enemyTexturePrefix = "USSR";
+    m3.playerCoins = 1000;
+    m3.Soundtracknumber = 4;
+	Wave waveC1;
+    waveC1.waveNumber = 1;
+    waveC1.entries.push_back({ EnemyType::SOLDIER, 5, 0.2f, 0 });
+    waveC1.entries.push_back({ EnemyType::LIGHT_TANK, 3, 1.0f, 1 });
+    waveC1.entries.push_back({ EnemyType::LIGHT_TANK, 3, 1.3f, 0 });
+	waveC1.entries.push_back({ EnemyType::SOLDIER, 10, 0.2f, 1 });
+    waveC1.entries.push_back({ EnemyType::LIGHT_PLANE, 2, 1.0f, 0 });
+    waveC1.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.0f, 0 });
+    waveC1.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 1.6f, 1 });
+	waveC1.entries.push_back({ EnemyType::MEDIUM_TANK, 2, 2.0f, 0 });
+	m3.waves.push_back(waveC1);
+	Wave waveC2;
+	waveC2.waveNumber = 2;
+	waveC2.entries.push_back({ EnemyType::SOLDIER, 10, 0.2f, 0 });
+	waveC2.entries.push_back({ EnemyType::LIGHT_TANK, 4, 1.0f, 1 });
+	waveC2.entries.push_back({ EnemyType::SOLDIER, 10, 0.4f, 1 });
+	waveC2.entries.push_back({ EnemyType::MEDIUM_TANK, 4, 1.3f, 0 });
+	waveC2.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 0.4f, 0 });
+	waveC2.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 1.6f, 1 });
+	waveC2.entries.push_back({ EnemyType::HEAVY_TANK, 3, 2.0f, 0 });
+	waveC2.entries.push_back({ EnemyType::HEAVY_PLANE, 3, 2.0f, 1 });
+	waveC2.entries.push_back({ EnemyType::SOLDIER, 10, 0.2f, 0 });
+	waveC2.entries.push_back({ EnemyType::LIGHT_TANK, 10, 1.0f, 1 });
+	m3.waves.push_back(waveC2);
+	Wave waveC3;
+	waveC3.waveNumber = 3;
+	waveC3.entries.push_back({ EnemyType::SOLDIER, 20, 0.2f, 0 });
+	waveC3.entries.push_back({ EnemyType::LIGHT_TANK, 5, 1.0f, 1 });
+	waveC3.entries.push_back({ EnemyType::MEDIUM_TANK, 5, 1.5f, 0 });
+	waveC3.entries.push_back({ EnemyType::LIGHT_PLANE, 5, 0.7f, 1 });
+	waveC3.entries.push_back({ EnemyType::MEDIUM_PLANE, 5, 1.0f, 0 });
+	waveC3.entries.push_back({ EnemyType::HEAVY_TANK, 4, 2.5f, 1 });
+	waveC3.entries.push_back({ EnemyType::HEAVY_PLANE, 4, 1.5f, 1});
+	waveC3.entries.push_back({ EnemyType::SOLDIER, 20, 0.2f, 1 });
+	waveC3.entries.push_back({ EnemyType::HEAVY_TANK, 5, 2.5f, 0 });
+	waveC3.entries.push_back({ EnemyType::MEDIUM_PLANE, 5, 1.5f, 0 });
+	waveC3.entries.push_back({ EnemyType::MEDIUM_TANK, 7, 2.0f, 1 });
+	m3.waves.push_back(waveC3);
+	Wave waveC4;
+	waveC4.waveNumber = 4;
+	waveC4.entries.push_back({ EnemyType::SOLDIER, 30, 0.2f, 0 });
+	waveC4.entries.push_back({ EnemyType::LIGHT_TANK, 10, 1.0f, 1 });
+	waveC4.entries.push_back({ EnemyType::MEDIUM_TANK, 10, 1.5f, 0 });
+	waveC4.entries.push_back({ EnemyType::LIGHT_PLANE, 10, 0.8f, 1 });
+	waveC4.entries.push_back({ EnemyType::MEDIUM_PLANE, 8, 1.5f, 0 });
+	waveC4.entries.push_back({ EnemyType::HEAVY_TANK, 5, 2.5f, 1 });
+	waveC4.entries.push_back({ EnemyType::HEAVY_PLANE, 5, 1.5f, 1 });
+	waveC4.entries.push_back({ EnemyType::SOLDIER, 30, 0.2f, 1 });
+	waveC4.entries.push_back({ EnemyType::HEAVY_TANK, 5, 2.5f, 0 });
+	waveC4.entries.push_back({ EnemyType::HEAVY_PLANE, 6, 1.5f, 0 });
+	m3.waves.push_back(waveC4);
+	Wave waveC5;
+	waveC5.waveNumber = 5;
+	waveC5.entries.push_back({ EnemyType::SOLDIER, 40, 0.2f, 0 });
+	waveC5.entries.push_back({ EnemyType::LIGHT_TANK, 10, 1.0f, 1 });
+	waveC5.entries.push_back({ EnemyType::MEDIUM_TANK, 10, 1.5f, 0 });
+	waveC5.entries.push_back({ EnemyType::HEAVY_TANK, 8, 2.5f, 1 });
+	waveC5.entries.push_back({ EnemyType::LIGHT_PLANE, 10, 0.4f, 0 });
+	waveC5.entries.push_back({ EnemyType::MEDIUM_PLANE, 10, 2.5f, 1 });
+	waveC5.entries.push_back({ EnemyType::HEAVY_PLANE, 8, 1.5f, 0 });
+	waveC5.entries.push_back({ EnemyType::SOLDIER, 100, 0.2f, 1 });
+	m3.waves.push_back(waveC5);
+	availableMaps.push_back(m3);
+
+	//D-Day
+    MapInfo m4;
+    m4.mapFile = "maps/map4.txt";
+    m4.enemyTexturePrefix = "USA";
+	m4.playerCoins = 1200;
+    m4.Soundtracknumber = 3;
+    Wave waveD1;
+    waveD1.waveNumber = 1;
+    waveD1.entries.push_back({ EnemyType::SOLDIER, 10, 0.3f, 0 });
+    waveD1.entries.push_back({ EnemyType::LIGHT_TANK, 3, 2.0f, 1 });
+    waveD1.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 2.3f, 0 });
+    waveD1.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 3.0f, 1 });
+    waveD1.entries.push_back({ EnemyType::SOLDIER, 10, 0.3f, 1 });
+    waveD1.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 2.0f, 0 });
+    waveD1.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 2.6f, 1 });
+	waveD1.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 3.0f, 0 });
+    waveD1.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 3.0f, 0 });
+    m4.waves.push_back(waveD1);
+	Wave waveD2;
+	waveD2.waveNumber = 2;
+	waveD2.entries.push_back({ EnemyType::SOLDIER, 10, 0.7f, 0 });
+	waveD2.entries.push_back({ EnemyType::LIGHT_TANK, 5, 1.5f, 1 });
+	waveD2.entries.push_back({ EnemyType::MEDIUM_TANK, 5, 2.5f, 0 });
+	waveD2.entries.push_back({ EnemyType::HEAVY_TANK, 3, 3.5f, 1 });
+	waveD2.entries.push_back({ EnemyType::LIGHT_PLANE, 5, 1.5f, 0 });
+	waveD2.entries.push_back({ EnemyType::MEDIUM_PLANE, 5, 2.5f, 1 });
+	waveD2.entries.push_back({ EnemyType::HEAVY_PLANE, 3, 3.5f, 0 });
+	waveD2.entries.push_back({ EnemyType::SOLDIER, 10, 0.7f, 1 });
+	waveD2.entries.push_back({ EnemyType::LIGHT_PLANE, 10, 1.7f, 1 });
+	waveD2.entries.push_back({ EnemyType::LIGHT_TANK, 10, 2.5f, 0 });
+    m4.waves.push_back(waveD2);
+	Wave waveD3;
+	waveD3.waveNumber = 3;
+	waveD3.entries.push_back({ EnemyType::SOLDIER, 20, 0.4f, 0 });
+	waveD3.entries.push_back({ EnemyType::LIGHT_TANK, 7, 2.0f, 1 });
+	waveD3.entries.push_back({ EnemyType::MEDIUM_PLANE, 4, 2.5f, 1 });
+	waveD3.entries.push_back({ EnemyType::MEDIUM_TANK, 7, 3.0f, 0 });
+	waveD3.entries.push_back({ EnemyType::HEAVY_TANK, 5, 4.0f, 1 });
+    waveD3.entries.push_back({ EnemyType::SOLDIER, 20, 0.4f, 1 });
+	waveD3.entries.push_back({ EnemyType::LIGHT_PLANE, 7, 1.5f, 0 });
+	waveD3.entries.push_back({ EnemyType::MEDIUM_PLANE, 7, 2.5f, 1 });
+	waveD3.entries.push_back({ EnemyType::HEAVY_PLANE, 5, 3.5f, 0 });
+	waveD3.entries.push_back({ EnemyType::SOLDIER, 20, 0.4f, 1 });
+	waveD3.entries.push_back({ EnemyType::HEAVY_TANK, 7, 4.5f, 0 });
+	waveD3.entries.push_back({ EnemyType::LIGHT_TANK, 12, 8.0f, 0 });
+    m4.waves.push_back(waveD3);
+	Wave waveD4;
+	waveD4.waveNumber = 4;
+	waveD4.entries.push_back({ EnemyType::SOLDIER, 30, 0.3f, 0 });
+    waveD4.entries.push_back({ EnemyType::LIGHT_PLANE, 10, 1.5f, 0 });
+	waveD4.entries.push_back({ EnemyType::LIGHT_TANK, 10, 2.0f, 1 });
+	waveD4.entries.push_back({ EnemyType::LIGHT_TANK, 10, 2.0f, 0 });
+    waveD4.entries.push_back({ EnemyType::HEAVY_PLANE, 7, 3.5f, 1 });
+	waveD4.entries.push_back({ EnemyType::MEDIUM_TANK, 10, 5.0f, 0 });
+	waveD4.entries.push_back({ EnemyType::HEAVY_TANK, 7, 9.0f, 0 });
+	waveD4.entries.push_back({ EnemyType::LIGHT_PLANE, 10, 1.5f, 0 });
+	waveD4.entries.push_back({ EnemyType::MEDIUM_PLANE, 10, 2.5f, 1 });
+	waveD4.entries.push_back({ EnemyType::HEAVY_PLANE, 7, 3.5f, 0 });
+	waveD4.entries.push_back({ EnemyType::SOLDIER, 30, 0.3f, 1 });
+    waveD4.entries.push_back({ EnemyType::HEAVY_TANK, 10, 9.0f, 1 });
+	m4.waves.push_back(waveD4); 
+	Wave waveD5;
+	waveD5.waveNumber = 5;
+	waveD5.entries.push_back({ EnemyType::SOLDIER, 50, 0.2f, 0 });
+	waveD5.entries.push_back({ EnemyType::SOLDIER, 50, 0.2f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
+	m4.waves.push_back(waveD5);
+    availableMaps.push_back(m4);
+
+	//PrzedmieÅ“cia Stalingradu
     MapInfo m5;
     m5.mapFile = "maps/map5.txt";
     m5.enemyTexturePrefix = "GER";
@@ -488,7 +944,7 @@ Game::Game()
     // HUD texture
     const std::string hudPath = "assets/ui/hud.png";
     if (!hudTexture.loadFromFile(hudPath)) {
-        std::cerr << "Nie mozna za³adowaæ HUD: " << hudPath << '\n';
+        std::cerr << "Nie mozna zaÂ³adowaÃ¦ HUD: " << hudPath << '\n';
         hudSprite.reset();
     } else {
         hudSprite = std::make_unique<sf::Sprite>(hudTexture);
@@ -497,7 +953,7 @@ Game::Game()
 
 	// Stats table texture
     if (!statsTableTexture.loadFromFile("assets/ui/stats_table.png")) {
-        std::cerr << "Nie mozna za³adowaæ tabeli statystyk: assets/ui/stats_table.png" << std::endl;
+        std::cerr << "Nie mozna zaÂ³adowaÃ¦ tabeli statystyk: assets/ui/stats_table.png" << std::endl;
 	}
 
     // Level icons textures
@@ -516,26 +972,26 @@ Game::Game()
 
     // load bullet textures (best effort)
     if(!bulletTextures[TowerType::INFANTRY_POST].loadFromFile("assets/bullets/IP_bullet.png")){
-        std::cerr << "Nie mozna za³adowaæ tekstury pocisku: assets/bullets/IP_bullet.png" << std::endl;
+        std::cerr << "Nie mozna zaÂ³adowaÃ¦ tekstury pocisku: assets/bullets/IP_bullet.png" << std::endl;
 	}
     if(!bulletTextures[TowerType::MACHINE_GUN].loadFromFile("assets/bullets/KM_bullet.png")){
-		std::cerr << "Nie mozna za³adowaæ tekstury pocisku: assets/bullets/KM_bullet.png" << std::endl;
+		std::cerr << "Nie mozna zaÂ³adowaÃ¦ tekstury pocisku: assets/bullets/KM_bullet.png" << std::endl;
 	}
     if (!bulletTextures[TowerType::ARTILLERY].loadFromFile("assets/bullets/ART_bullet.png")) {
-		std::cerr << "Nie mozna za³adowaæ tekstury pocisku: assets/bullets/ART_bullet.png" << std::endl;
+		std::cerr << "Nie mozna zaÂ³adowaÃ¦ tekstury pocisku: assets/bullets/ART_bullet.png" << std::endl;
     }
     if (!bulletTextures[TowerType::AA_GUN].loadFromFile("assets/bullets/AA_bullet.png")) {
-		std::cerr << "Nie mozna za³adowaæ tekstury pocisku: assets/bullets/AA_bullet.png" << std::endl;
+		std::cerr << "Nie mozna zaÂ³adowaÃ¦ tekstury pocisku: assets/bullets/AA_bullet.png" << std::endl;
     }
 
     //HP text
     if (!font.openFromFile("assets/font/SFC_Rimowa.ttf")) {
-        std::cerr << "Nie mo¿na za³adowaæ czcionki: assets/font/SFC_Rimowa.ttf" << std::endl;
-        font = sf::Font(); // U¿yj domyœlnej czcionki SFML
+        std::cerr << "Nie moÂ¿na zaÂ³adowaÃ¦ czcionki: assets/font/SFC_Rimowa.ttf" << std::endl;
+        font = sf::Font(); // UÂ¿yj domyÅ“lnej czcionki SFML
     }
     if (!fontForText.openFromFile("assets/font/montserrat.semibold.ttf")) {
-        std::cerr << "Nie mo¿na za³adowaæ czcionki: assets/font/SFC_Rimowa.ttf" << std::endl;
-        font = sf::Font(); // U¿yj domyœlnej czcionki SFML
+        std::cerr << "Nie moÂ¿na zaÂ³adowaÃ¦ czcionki: assets/font/SFC_Rimowa.ttf" << std::endl;
+        font = sf::Font(); // UÂ¿yj domyÅ“lnej czcionki SFML
     }
 	//HP text
     HPText.setString(to_string(PlayerHP) + "/100");
@@ -579,7 +1035,7 @@ Game::Game()
 	KillsText.setPosition({ (float)window.getSize().x - ((float)statsTableTexture.getSize().x / 2.0f), 1502.0f });
 
 
-    // W konstruktorze po za³adowaniu mapy - ³adujemy tekstury raz:
+    // W konstruktorze po zaÂ³adowaniu mapy - Â³adujemy tekstury raz:
     for (const auto& item : TOWER_CONFIGS) {
         const TowerType type = item.first;
         const TowerConfig& cfg = item.second;
@@ -588,7 +1044,7 @@ Game::Game()
             std::cerr << "Nie mozna zaladowac tekstury: " << cfg.textureFile << std::endl;
             continue;
         }
-        towerTextures[type] = std::move(tex); // przechowujemy trwa³¹ kopiê
+        towerTextures[type] = std::move(tex); // przechowujemy trwaÂ³Â¹ kopiÃª
     }
 
     // Load tower icon textures
@@ -607,10 +1063,10 @@ Game::Game()
 
     // Wave button textures and sprite
     if(!buttonWaveStartTexture.loadFromFile("assets/ui/button_wave_start.png")){
-        std::cerr << "Nie mozna za³adowaæ tekstury przycisku fali: assets/ui/button_wave_start.png" << std::endl;
+        std::cerr << "Nie mozna zaÂ³adowaÃ¦ tekstury przycisku fali: assets/ui/button_wave_start.png" << std::endl;
 	}
     if (!buttonWaveRunningTexture.loadFromFile("assets/ui/button_wave_running.png")) {
-		std::cerr << "Nie mozna za³adowaæ tekstury przycisku fali: assets/ui/button_wave_running.png" << std::endl;
+		std::cerr << "Nie mozna zaÂ³adowaÃ¦ tekstury przycisku fali: assets/ui/button_wave_running.png" << std::endl;
     }
     waveButtonSprite = std::make_unique<sf::Sprite>(buttonWaveStartTexture);
     // Place bottom-right with 20px margin
@@ -623,10 +1079,10 @@ Game::Game()
 
     // Load action menu button textures
     if (!upgradeButtonTexture.loadFromFile("assets/ui/button_upgrade.png")) {
-        std::cerr << "Nie mozna za³adowaæ assets/ui/button_upgrade.png" << std::endl;
+        std::cerr << "Nie mozna zaÂ³adowaÃ¦ assets/ui/button_upgrade.png" << std::endl;
     }
     if (!destroyButtonTexture.loadFromFile("assets/ui/button_destroy.png")) {
-        std::cerr << "Nie mozna za³adowaæ assets/ui/button_destroy.png" << std::endl;
+        std::cerr << "Nie mozna zaÂ³adowaÃ¦ assets/ui/button_destroy.png" << std::endl;
     }
 
     // Victory/defeat assets
@@ -635,14 +1091,14 @@ Game::Game()
         defeatSprite->setOrigin({ (float)defeatTexture.getSize().x / 2.0f, (float)defeatTexture.getSize().y / 2.0f });
         defeatSprite->setPosition({ (float)window.getSize().x / 2.0f, (float)window.getSize().y / 2.0f });
     } else {
-        std::cerr << "Nie mozna za³adowaæ defeat.png (assets/ui/defeat.png)" << std::endl;
+        std::cerr << "Nie mozna zaÂ³adowaÃ¦ defeat.png (assets/ui/defeat.png)" << std::endl;
     }
     if (victoryTexture.loadFromFile("assets/ui/victory.png")) {
         victorySprite = std::make_unique<sf::Sprite>(victoryTexture);
         victorySprite->setOrigin({ (float)victoryTexture.getSize().x / 2.0f, (float)victoryTexture.getSize().y / 2.0f });
         victorySprite->setPosition({ (float)window.getSize().x / 2.0f, (float)window.getSize().y / 2.0f });
     } else {
-        std::cerr << "Nie mozna za³adowaæ victory.png (assets/ui/victory.png)" << std::endl;
+        std::cerr << "Nie mozna zaÂ³adowaÃ¦ victory.png (assets/ui/victory.png)" << std::endl;
     }
 
     // End screen buttons
@@ -651,14 +1107,14 @@ Game::Game()
         repeatButtonSprite->setOrigin({ (float)repeatButtonTexture.getSize().x / 2.0f, (float)repeatButtonTexture.getSize().y / 2.0f });
         repeatButtonSprite->setPosition({ (float)window.getSize().x / 2.0f + 185.0f, (float)window.getSize().y / 2.0f + 585.0f});
     } else {
-        std::cerr << "Nie mozna za³adowaæ repeat.png (assets/ui/button_repeat.png)" << std::endl;
+        std::cerr << "Nie mozna zaÂ³adowaÃ¦ repeat.png (assets/ui/button_repeat.png)" << std::endl;
     }
     if (continueButtonTexture.loadFromFile("assets/ui/button_continue.png")) {
         continueButtonSprite = std::make_unique<sf::Sprite>(continueButtonTexture);
         continueButtonSprite->setOrigin({ (float)continueButtonTexture.getSize().x / 2.0f, (float)continueButtonTexture.getSize().y / 2.0f });
         continueButtonSprite->setPosition({ (float)window.getSize().x / 2.0f + 185.0f, (float)window.getSize().y / 2.0f + 585.0f });
     } else {
-        std::cerr << "Nie mozna za³adowaæ continue.png (assets/ui/button_continue.png)" << std::endl;
+        std::cerr << "Nie mozna zaÂ³adowaÃ¦ continue.png (assets/ui/button_continue.png)" << std::endl;
     }
 
     // Overlay setup (dark semi-transparent rectangle as blur substitute)
@@ -686,17 +1142,17 @@ void Game::processEvents() {
             isRunning = false;
             window.close();
         }
-        // --- OBS£UGA MENU ---
+        // --- OBSÂ£UGA MENU ---
         if (isMenuState) {
-            // W menu interesuje nas tylko klikniêcie myszk¹ (do update)
-            // lub wyjœcie ESC
+            // W menu interesuje nas tylko klikniÃªcie myszkÂ¹ (do update)
+            // lub wyjÅ“cie ESC
             if (const auto* keyEvent = event->getIf<sf::Event::KeyPressed>()) {
                 if (keyEvent->code == sf::Keyboard::Key::Escape) {
                     window.close();
                     isRunning = false;
                 }
             }
-            continue; // Nie przetwarzaj reszty logiki gry (klikniêæ w wie¿e itp.)
+            continue; // Nie przetwarzaj reszty logiki gry (klikniÃªÃ¦ w wieÂ¿e itp.)
         }
 
         // If game over, handle clicks only on overlay buttons
@@ -725,7 +1181,33 @@ void Game::processEvents() {
             continue;
         }
 
-        // Klikniêcie myszk¹
+        // If game over, handle clicks only on overlay buttons
+        if (gameOver) {
+            if (auto mouseEvent = event->getIf<sf::Event::MouseButtonPressed>()) {
+                if (mouseEvent->button == sf::Mouse::Button::Left) {
+                    sf::Vector2f mouseWindowPos(static_cast<float>(mouseEvent->position.x), static_cast<float>(mouseEvent->position.y));
+                    if (!victory) {
+                        // defeat: click repeat button
+                        if (repeatButtonSprite && repeatButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+                            // hide end screen immediately
+                            gameOver = false;
+                            victory = false;
+                            restartCurrentLevel();
+                        }
+                    } else {
+                        // victory: click continue button
+                        if (continueButtonSprite && continueButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+                            gameOver = false;
+                            victory = false;
+                            goToNextMap();
+                        }
+                    }
+                }
+            }
+            continue;
+        }
+
+        // KlikniÃªcie myszkÂ¹
         if (auto mouseEvent = event->getIf<sf::Event::MouseButtonPressed>()) {
             if (mouseEvent->button == sf::Mouse::Button::Left) {
                 sf::Vector2i pixelPos(mouseEvent->position.x, mouseEvent->position.y);
@@ -935,7 +1417,7 @@ void Game::handleMouseClick(const sf::Vector2f& position) {
                 // occupy area; if already occupied, block building
                 if (!map.occupyBuildAreaAtCenter(center)) {
                     closeTowerMenu();
-                    std::cout << "To miejsce jest zajête\n";
+                    std::cout << "To miejsce jest zajÃªte\n";
                     return;
                 }
                 PlayerCoins -= cost;
@@ -1000,9 +1482,9 @@ void Game::update(float deltaTime) {
 
         int action = menu->update(mousePos, mousePressed);
 
-        // Klikniêcie GRAJ (w g³ównym menu)
+        // KlikniÃªcie GRAJ (w gÂ³Ã³wnym menu)
         if (action == 1) {
-            // 1. Rysujemy wciœniêty przycisk
+            // 1. Rysujemy wciÅ“niÃªty przycisk
             window.clear(sf::Color::Black);
             menu->draw(window);
             window.display();
@@ -1010,34 +1492,34 @@ void Game::update(float deltaTime) {
             // 2. Czekamy
             sf::sleep(sf::milliseconds(200));
 
-            // 3. Zmieniamy stan MENU na wybór poziomów (NIE startujemy jeszcze gry!)
+            // 3. Zmieniamy stan MENU na wybÃ³r poziomÃ³w (NIE startujemy jeszcze gry!)
             menu->switchToLevelSelect();
 
-            // Czekamy chwilê, ¿eby puszczenie myszki nie kliknê³o od razu w mapê
+            // Czekamy chwilÃª, Â¿eby puszczenie myszki nie kliknÃªÂ³o od razu w mapÃª
             sf::sleep(sf::milliseconds(200));
         }
 
-        // Klikniêcie w MAPÊ (w menu wyboru poziomów)
-        // Kody od 100 w górê to wybór mapy
+        // KlikniÃªcie w MAPÃŠ (w menu wyboru poziomÃ³w)
+        // Kody od 100 w gÃ³rÃª to wybÃ³r mapy
         else if (action >= 100) {
             int mapIndex = action - 100; // 100 -> 0, 101 -> 1 itd.
 
-            // 1. Rysujemy wciœniêt¹ mapê (feedback wizualny)
+            // 1. Rysujemy wciÅ“niÃªtÂ¹ mapÃª (feedback wizualny)
             window.clear(sf::Color::Black);
             menu->draw(window);
             window.display();
             sf::sleep(sf::milliseconds(200));
 
-            // 2. £adujemy wybran¹ mapê
+            // 2. Â£adujemy wybranÂ¹ mapÃª
             loadMapByIndex(mapIndex);
 
-            // 3. Startujemy grê
+            // 3. Startujemy grÃª
             isMenuState = false;
         }
 
         return; // Koniec update dla menu
     }
-    // Aktualizacja fal i generowanych przeciwników
+    // Aktualizacja fal i generowanych przeciwnikÃ³w
     const auto& path1 = map.getPathPoints();
     const auto& path2 = map.getPathPoints2();
 
@@ -1126,7 +1608,7 @@ void Game::update(float deltaTime) {
         if (!removed) ++it;
     }
 
-    // Aktualizacja przeciwników
+    // Aktualizacja przeciwnikÃ³w
     for (auto it = enemies.begin(); it != enemies.end();) {
         auto& e = *it;
         e->update(deltaTime);
@@ -1183,7 +1665,7 @@ void Game::HPTextUpdate() {
 }
 
 void Game::render() {
-    // ZMIEÑ: sf::Color::Black na sf::Color::Magenta
+    // ZMIEÃ‘: sf::Color::Black na sf::Color::Magenta
     window.clear(sf::Color::Magenta);
 
     // --- RYSOWANIE MENU ---
@@ -1197,10 +1679,10 @@ void Game::render() {
     window.clear(sf::Color::Black);
     window.draw(backgroundSprite);
 
-    // 1. T³o (Map::draw rysuje t³o jeœli istnieje)
+    // 1. TÂ³o (Map::draw rysuje tÂ³o jeÅ“li istnieje)
     map.draw(window);
 
-    // 3. Wie¿e
+    // 3. WieÂ¿e
     for (const auto& tower : towers) {
         tower.draw(window);
     }
@@ -1257,8 +1739,8 @@ void Game::render() {
         sf::CircleShape bgCircle(80.0f);
         bgCircle.setOrigin({80.0f, 80.0f});
         bgCircle.setPosition(towerMenuCenter);
-        bgCircle.setFillColor(sf::Color(0,0,0,0)); //WY£¥CZONE
-        bgCircle.setOutlineColor(sf::Color(255,255,255,0)); //WY£¥CZONE
+        bgCircle.setFillColor(sf::Color(0,0,0,0)); //WYÂ£Â¥CZONE
+        bgCircle.setOutlineColor(sf::Color(255,255,255,0)); //WYÂ£Â¥CZONE
         bgCircle.setOutlineThickness(2.0f);
         window.draw(bgCircle);
         for (const auto& opt : towerMenuOptions) {
