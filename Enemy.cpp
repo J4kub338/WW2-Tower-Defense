@@ -14,13 +14,15 @@ namespace {
 
     // Map each enemy type to the correct base filename (unit name only, no map prefix)
     const std::map<EnemyType, EnemyConfig> ENEMY_CONFIGS = {
-        {EnemyType::SOLDIER,     {"Soldier",      70.0f, 120, 5, "soldier"}},
-        {EnemyType::LIGHT_TANK,  {"Light Tank",   80.0f, 650, 20, "light_tank"}},
-        {EnemyType::MEDIUM_TANK, {"Medium Tank",  60.0f,1000, 40, "med_tank"}},
-        {EnemyType::HEAVY_TANK,  {"Heavy Tank",   43.0f,1350,100, "heavy_tank"}},
-        {EnemyType::LIGHT_PLANE, {"Light Plane",  110.0f, 400, 20, "light_plane"}},
-        {EnemyType::MEDIUM_PLANE,{"Medium Plane", 80.0f, 650, 30, "med_plane"}},
-        {EnemyType::HEAVY_PLANE, {"Heavy Plane",  60.0f, 1100,90, "heavy_plane"}}
+        {EnemyType::SOLDIER,     {"Soldier",      70.0f, 120, 5, "soldier"}}, //70 basic speed
+        {EnemyType::LIGHT_TANK,  {"Light Tank",   80.0f, 750, 20, "light_tank"}},
+        {EnemyType::MEDIUM_TANK, {"Medium Tank",  70.0f,1100, 40, "med_tank"}},
+        {EnemyType::HEAVY_TANK,  {"Heavy Tank",   55.0f,1500, 60, "heavy_tank"}},
+        {EnemyType::LIGHT_PLANE, {"Light Plane",  90.0f, 500, 20, "light_plane"}},
+        {EnemyType::MEDIUM_PLANE,{"Medium Plane", 80.0f, 750, 30, "med_plane"}},
+        {EnemyType::HEAVY_PLANE, {"Heavy Plane",  70.0f, 1250,50, "heavy_plane"}},
+		{EnemyType::MINI_BOSS,   {"Mini Boss",    30.0f, 7500, 450, "mini_boss"}},
+        {EnemyType::BOSS, {"Boss", 25.0f, 18000, 1000, "boss"}}
     };
 }
 
@@ -196,7 +198,9 @@ void Enemy::setTextureForDirection(Direction dir) {
                 type == EnemyType::HEAVY_PLANE ||
                 type == EnemyType::LIGHT_TANK ||
                 type == EnemyType::MEDIUM_TANK ||
-                type == EnemyType::HEAVY_TANK) {
+                type == EnemyType::HEAVY_TANK ||
+				type == EnemyType::MINI_BOSS ||
+                type == EnemyType::BOSS) {
 
                 float rotation = 0.0f;
                 switch (dir) {

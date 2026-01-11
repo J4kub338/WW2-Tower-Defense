@@ -26,7 +26,12 @@ struct TowerConfig {
     // upgrade deltas per level (applied each time, up to max level)
     int upgradeDamageDelta;
     float upgradeFireRateDelta;
-	int level = 1;
+
+    // AoE (used e.g. by artillery). If radius <= 0 => no AoE.
+    float explosionRadius = 0.0f;          // promieñ obra¿eñ obszarowych (px)
+    float edgeDamageMultiplier = 1.0f;     // mno¿nik obra¿eñ na brzegu (0..1), œrodek = 1.0
+
+    int level = 1;
 };
 
 class Tower {
@@ -77,6 +82,10 @@ public:
     int getLevel() const { return level; }
     bool canUpgrade() const { return level <= MaxLevel; }
     std::string getTexture() const;
+
+    // AoE getters
+    float getExplosionRadius() const { return config.explosionRadius; }
+    float getEdgeDamageMultiplier() const { return config.edgeDamageMultiplier; }
 
     // Logika
     void upgrade();

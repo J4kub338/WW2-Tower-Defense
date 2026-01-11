@@ -9,10 +9,12 @@
 #include "SFML/Graphics/Font.hpp"
 #include "Projectile.hpp"
 #include "Sounds.hpp"
+#include "ExplosionEffect.hpp"
+#include "Menu.hpp"
 
 
 using namespace sf;
-using namespace std;   
+using namespace std;
 
 struct MapInfo {
     std::string mapFile; // path to map file
@@ -20,11 +22,20 @@ struct MapInfo {
     std::vector<Wave> waves; // waves specific to this map
     int playerCoins = 300; // initial player coins for this map
     int numberOfWaves = waves.size();
-	int Soundtracknumber = 1; // soundtrack index
+    int Soundtracknumber = 1; // soundtrack index
+    string mapName = "Default Map"; // map display name
 };
 
 class Game {
 private:
+    enum class GameState {
+        MAIN_MENU,
+        PLAYING
+    };
+
+    GameState gameState = GameState::MAIN_MENU;
+    Menu mainMenu;
+
     sf::RenderWindow window;
     Map map;
     std::vector<Tower> towers;
@@ -42,10 +53,12 @@ private:
     Text CoinsText;
     Text WaveText;
     Text KillsText;
+    Text MapNameText;
+    Text MapNameTextBigger;
     int PlayerCoins = 300;
 
 
-	//hud textures and sprites
+    //hud textures and sprites
     Texture hudTexture;
     Texture statsTableTexture;
     std::unique_ptr<Sprite> hudSprite; // SFML 3 Sprite has no default ctor
@@ -54,10 +67,15 @@ private:
     sf::Texture level1Texture;
     sf::Texture level2Texture;
     sf::Texture level3Texture;
-	Texture level4Texture;
+    Texture level4Texture;
     std::vector<std::unique_ptr<sf::Sprite>> levelIcons; // one per tower index
 
     std::vector<std::unique_ptr<Projectile>> projectiles;
+
+    // Artillery explosion VFX (6-frame animation)
+    std::vector<sf::Texture> explosionFrameTextures;
+    std::vector<const sf::Texture*> explosionFrames; // pointers into explosionFrameTextures
+    std::vector<ExplosionEffect> explosionEffects;
 
 
     //Sounds
@@ -74,12 +92,12 @@ private:
     float lowCoinsMessageTimer = 0.0f; // seconds
 
     Text MaxLevelText;
-	bool showMaxLevelMessage = false;
-	float maxLevelMessageTimer = 0.0f; // seconds
+    bool showMaxLevelMessage = false;
+    float maxLevelMessageTimer = 0.0f; // seconds
 
     // Map selection
     std::vector<MapInfo> availableMaps;
-    int selectedMapIndex = 1;
+    int selectedMapIndex = 4;
     std::string currentMapEnemyPrefix; // prefix like "GER" or "UK"
 
     // Radial tower selection menu
@@ -99,6 +117,9 @@ private:
     std::unique_ptr<sf::Sprite> destroyButtonSprite;
     int selectedTowerIndex = -1; // index in towers vector
 
+    // UI: upgrade cost label (shown under upgrade button when action menu is open)
+    sf::Text upgradeCostText;
+
 
     // Wave UI state
     int currentWaveNumber = 0;
@@ -116,8 +137,46 @@ private:
     // End screen buttons
     sf::Texture repeatButtonTexture;   // defeat screen
     sf::Texture continueButtonTexture; // victory screen
+	Texture mainMenuEndButtonTexture; // both screens
     std::unique_ptr<sf::Sprite> repeatButtonSprite;
     std::unique_ptr<sf::Sprite> continueButtonSprite;
+	unique_ptr <Sprite> mainMenuEndButtonSprite;
+
+
+    //In game menu
+
+    bool inGameMenuActive = false;
+    bool soundOn = true;
+    RectangleShape inGameMenuBackground;
+    unique_ptr <Sprite> inGameMenuSprite;
+    unique_ptr <Sprite> restartButtonSprite;
+    unique_ptr <Sprite> mainMenuButtonSprite;
+    unique_ptr <Sprite> soundButtonSprite;
+    unique_ptr <Sprite> resumeButtonSprite;
+    Texture resumeButtonTexture;
+    Texture mainMenuButtonTexture;
+    Texture restartButtonTexture;
+    Texture inGameMenuTexture;
+    Texture soundOnTexture;
+    Texture soundOffTexture;
+
+    // --- Guidebook / Help (pause menu) ---
+    bool guidebookActive = false;
+    int guidebookPage = 1; // 1 or 2
+
+    sf::Texture helpButtonTexture;
+    std::unique_ptr<sf::Sprite> helpButtonSprite;
+
+    sf::Texture guidebook1Texture;
+    sf::Texture guidebook2Texture;
+    std::unique_ptr<sf::Sprite> guidebookSprite;
+
+    sf::Texture changePageButtonTexture;
+    std::unique_ptr<sf::Sprite> changePageButtonSprite;
+
+    sf::Texture backFromGuideButtonTexture;
+    std::unique_ptr<sf::Sprite> backFromGuideButtonSprite;
+
 
     // Metody prywatne
     void processEvents();
@@ -127,6 +186,7 @@ private:
     void HPTextUpdate();
 
     void loadMapByIndex(int index);
+    void startPlayingMap(int index);
 
     void openTowerMenu(const sf::Vector2f& center);
     void closeTowerMenu();
@@ -136,6 +196,7 @@ private:
     void closeTowerActionMenu();
     void tryUpgradeSelectedTower();
     void destroySelectedTower();
+    void updateUpgradeCostUI();
 
     // end game helpers
     void triggerDefeat();

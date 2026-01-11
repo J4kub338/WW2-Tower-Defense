@@ -12,7 +12,9 @@ enum class EnemyType {
     HEAVY_TANK,
     LIGHT_PLANE,
     MEDIUM_PLANE,
-    HEAVY_PLANE
+    HEAVY_PLANE,
+    MINI_BOSS,
+    BOSS
 };
 
 enum class Direction {

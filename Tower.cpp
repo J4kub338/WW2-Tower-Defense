@@ -2,19 +2,21 @@
 #include <iostream>
 #include <cmath>
 
-// Konfiguracje wie¿ WWII
+// Konfiguracje wie¿
 const std::map<TowerType, TowerConfig> TOWER_CONFIGS = {
     {TowerType::INFANTRY_POST, {
         "Stanowisko Piechoty",
         200.0f,  // range
         15,      // damage
-        5.0f,    // fireRate
+        4.0f,    // fireRate
         100,      // cost
         "assets/towers/Infantry_post1.png",
-        100,     // upgradeCost
+        150,     // upgradeCost
         {128.0f, 128.0f},  // size
         5,       // upgradeDamageDelta
-        1.0f     // upgradeFireRateDelta
+        1.0f,    // upgradeFireRateDelta
+        0.0f,    // explosionRadius
+        1.0f     // edgeDamageMultiplier
     }},
     {TowerType::MACHINE_GUN, {
         "Karabin Maszynowy",
@@ -23,10 +25,12 @@ const std::map<TowerType, TowerConfig> TOWER_CONFIGS = {
         6.0f,   // fireRate
         180,     // cost
         "assets/towers/Machine_gun1.png",
-        150,     // upgradeCost
+        220,     // upgradeCost
         {140.0f, 140.0f},  // size
-        7,       // upgradeDamageDelta
-        1.5f     // upgradeFireRateDelta
+        4,       // upgradeDamageDelta
+        0.5f,    // upgradeFireRateDelta
+        0.0f,    // explosionRadius
+        1.0f     // edgeDamageMultiplier
     }},
     {TowerType::ARTILLERY, {
         "Artyleria",
@@ -35,10 +39,12 @@ const std::map<TowerType, TowerConfig> TOWER_CONFIGS = {
         1.0f,    // fireRate
         300,     // cost
         "assets/towers/Artillery1.png",
-        300,     // upgradeCost
+        450,     // upgradeCost
         {164.0f, 164.0f},  // size
         15,      // upgradeDamageDelta
-        0.2f     // upgradeFireRateDelta
+        0.2f,    // upgradeFireRateDelta
+        90.0f,   // explosionRadius (px)
+        0.35f    // edgeDamageMultiplier (35% dmg at the edge)
     }},
     {TowerType::AA_GUN, {
         "Dzialo Przeciwlotnicze",
@@ -47,10 +53,12 @@ const std::map<TowerType, TowerConfig> TOWER_CONFIGS = {
         3.0f,    // fireRate
         250,     // cost
         "assets/towers/AA_gun1.png",
-        350,     // upgradeCost
+        320,     // upgradeCost
         {140.0f, 140.0f},  // size
         10,      // upgradeDamageDelta
-        0.2f     // upgradeFireRateDelta
+        0.2f,    // upgradeFireRateDelta
+        0.0f,    // explosionRadius
+        1.0f     // edgeDamageMultiplier
     }}
 };
 

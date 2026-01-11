@@ -1,8 +1,24 @@
 #include "Game.hpp"
 #include <iostream>
-#include <cmath> 
+#include <cmath>
+#include <unordered_set>
 
-static std::unique_ptr<Projectile> makeProjectileForTower(TowerType type, const sf::Vector2f& pos, const sf::Vector2f& dir, const std::unordered_map<TowerType, sf::Texture>& bulletTextures, int damage, float maxRange) {
+namespace {
+    void logOnce(const char* msg) {
+        static std::unordered_set<std::string> seen;
+        if (seen.insert(msg).second) {
+            std::cerr << msg << std::endl;
+        }
+    }
+
+    // Track currently playing menu music (per process)
+    bool g_menuMusicPlaying = false;
+}
+
+static std::unique_ptr<Projectile> makeProjectileForTower(TowerType type, const sf::Vector2f& pos, const sf::Vector2f& dir,
+                                                         const std::unordered_map<TowerType, sf::Texture>& bulletTextures,
+                                                         int damage, float maxRange,
+                                                         float explosionRadius = 0.0f, float edgeDamageMultiplier = 1.0f) {
     const sf::Texture* tex = nullptr;
     auto it = bulletTextures.find(type);
     if (it != bulletTextures.end()) tex = &it->second;
@@ -10,10 +26,10 @@ static std::unique_ptr<Projectile> makeProjectileForTower(TowerType type, const 
     switch (type) {
     case TowerType::INFANTRY_POST: speed = 900.0f; break;
     case TowerType::MACHINE_GUN: speed = 1000.0f; break;
-    case TowerType::ARTILLERY: speed = 900.0f; break;
+    case TowerType::ARTILLERY: speed = 1000.0f; break;
     case TowerType::AA_GUN: speed = 900.0f; break;
     }
-    return std::make_unique<Projectile>(pos, dir, speed, damage, tex, maxRange);
+    return std::make_unique<Projectile>(pos, dir, speed, damage, tex, maxRange, explosionRadius, edgeDamageMultiplier);
 }
 
 void Game::loadMapByIndex(int index) {
@@ -33,7 +49,7 @@ void Game::loadMapByIndex(int index) {
     }
 
     // Start or switch background music for selected map
-    soundManager.playBackground("music/track" + std::to_string(info.Soundtracknumber) + ".mp3", true, 60.0f);
+    soundManager.playBackground("music/track" + std::to_string(info.Soundtracknumber) + ".mp3", true, 20.0f);
 
     // store current map prefix for spawn-time use
     currentMapEnemyPrefix = info.enemyTexturePrefix;
@@ -50,6 +66,9 @@ void Game::loadMapByIndex(int index) {
 	numberOfWaves = static_cast<int>(info.waves.size());
 	WaveText.setString(to_string(currentWaveNumber) + "/" + to_string(info.waves.size()));
 	
+    MapNameText.setString(info.mapName);
+	MapNameTextBigger.setString(info.mapName);
+    MapNameTextBigger.setOrigin({ MapNameTextBigger.getLocalBounds().size.x / 2.0f, MapNameTextBigger.getLocalBounds().size.y / 2.0f });
 
     gameOver = false;
     victory = false;
@@ -59,7 +78,7 @@ void Game::loadMapByIndex(int index) {
 }
 
 Game::Game()
-    : window(sf::VideoMode({ 2560, 1600 }), "Tower Defense - WWII", State::Fullscreen),
+    : window(sf::VideoMode({ 2580, 1600 }), "Tower Defense - WWII", State::Fullscreen),
       selectedTowerType(TowerType::INFANTRY_POST),
       showAllRanges(false),
       isRunning(true),
@@ -68,8 +87,13 @@ Game::Game()
       lowCoinsText(font),
 	  WaveText(font),
 	  KillsText(font),
-	  MaxLevelText(font)
+	  MaxLevelText(font),
+      upgradeCostText(font),
+      MapNameText(font),
+	  MapNameTextBigger(font)
 {
+    std::cerr << "[BOOT] Game::Game() start\n";
+
     // Setup available maps (basic example)
     //Kampania wrzeœniowa
     MapInfo m1;
@@ -77,6 +101,7 @@ Game::Game()
     m1.mapFile = "maps/map1.txt";
     m1.enemyTexturePrefix = "GER";
 	m1.Soundtracknumber = 3;
+	m1.mapName = "Kampania wrzesniowa";
     // example waves - these would normally be loaded from a per-map data file
     Wave waveA1;
     waveA1.waveNumber = 1; 
@@ -131,6 +156,7 @@ Game::Game()
     m2.enemyTexturePrefix = "UK";
     m2.playerCoins = 850;
     m2.Soundtracknumber = 2;
+	m2.mapName = "Afryka Polnocna";
     Wave waveB1;
     waveB1.waveNumber = 1; 
     waveB1.entries.push_back({ EnemyType::SOLDIER, 5, 0.9f, 0 });
@@ -214,9 +240,10 @@ Game::Game()
 	m3.enemyTexturePrefix = "USSR";
     m3.playerCoins = 1000;
     m3.Soundtracknumber = 4;
+	m3.mapName = "Operacja Barbarossa";
 	Wave waveC1;
     waveC1.waveNumber = 1;
-    waveC1.entries.push_back({ EnemyType::SOLDIER, 5, 0.2f, 0 });
+    waveC1.entries.push_back({ EnemyType::SOLDIER, 10, 0.2f, 0 });
     waveC1.entries.push_back({ EnemyType::LIGHT_TANK, 3, 1.0f, 1 });
     waveC1.entries.push_back({ EnemyType::LIGHT_TANK, 3, 1.3f, 0 });
 	waveC1.entries.push_back({ EnemyType::SOLDIER, 10, 0.2f, 1 });
@@ -282,11 +309,13 @@ Game::Game()
     MapInfo m4;
     m4.mapFile = "maps/map4.txt";
     m4.enemyTexturePrefix = "USA";
-	m4.playerCoins = 1200;
+	m4.playerCoins = 1900;
     m4.Soundtracknumber = 3;
+	m4.mapName = "D-Day";
     Wave waveD1;
     waveD1.waveNumber = 1;
-    waveD1.entries.push_back({ EnemyType::SOLDIER, 10, 0.3f, 0 });
+	waveD1.entries.push_back({ EnemyType::MINI_BOSS, 1, 0.3f, 0 });
+    waveD1.entries.push_back({ EnemyType::SOLDIER, 100, 0.1f, 1 });
     waveD1.entries.push_back({ EnemyType::LIGHT_TANK, 3, 2.0f, 1 });
     waveD1.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 2.3f, 0 });
     waveD1.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 3.0f, 1 });
@@ -343,39 +372,23 @@ Game::Game()
 	waveD5.waveNumber = 5;
 	waveD5.entries.push_back({ EnemyType::SOLDIER, 50, 0.2f, 0 });
 	waveD5.entries.push_back({ EnemyType::SOLDIER, 50, 0.2f, 1 });
+    waveD5.entries.push_back({ EnemyType::MINI_BOSS, 1, 0.3f, 0 });
+    waveD5.entries.push_back({ EnemyType::MINI_BOSS, 1, 2.4f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 0 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 0 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 0 });
     waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
     waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
     waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
     waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 0});
     waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 0 });
     waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
-    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 1 });
+    waveD5.entries.push_back({ EnemyType::HEAVY_TANK, 1, 2.0f, 0 });
     waveD5.entries.push_back({ EnemyType::HEAVY_PLANE, 1, 2.0f, 1 });
 	m4.waves.push_back(waveD5);
     availableMaps.push_back(m4);
@@ -385,63 +398,78 @@ Game::Game()
     m5.mapFile = "maps/map5.txt";
     m5.enemyTexturePrefix = "GER";
     m5.Soundtracknumber = 4;
-    m5.playerCoins = 1500;
+    m5.playerCoins = 15000;
+	m5.mapName = "Obrzeza Stalingradu";
     Wave waveE1;
     waveE1.waveNumber = 1;
     waveE1.entries.push_back({ EnemyType::SOLDIER, 5, 0.9f, 0 });
-    waveE1.entries.push_back({ EnemyType::LIGHT_TANK, 3, 2.0f, 1 });
-    waveE1.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 2.3f, 0 });
-    waveE1.entries.push_back({ EnemyType::HEAVY_TANK, 3, 3.0f, 1 });
-    waveE1.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 2.0f, 0 });
-    waveE1.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 2.6f, 1 });
-    waveE1.entries.push_back({ EnemyType::HEAVY_PLANE, 3, 3.0f, 0 });
+    waveE1.entries.push_back({ EnemyType::LIGHT_TANK, 3, 1.5f, 1 });
+    waveE1.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 2.0f, 0 });
+    waveE1.entries.push_back({ EnemyType::HEAVY_TANK, 3, 2.5f, 1 });
+    waveE1.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 1.2f, 0 });
+    waveE1.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 1.8f, 1 });
+    waveE1.entries.push_back({ EnemyType::HEAVY_PLANE, 3, 2.2f, 0 });
 	m5.waves.push_back(waveE1);
 	Wave waveE2;   
 	waveE2.waveNumber = 2;
 	waveE2.entries.push_back({ EnemyType::SOLDIER, 10, 0.7f, 0 });
-	waveE2.entries.push_back({ EnemyType::LIGHT_TANK, 5, 1.5f, 1 });
-	waveE2.entries.push_back({ EnemyType::LIGHT_TANK, 7, 1.5f, 0 });
+	waveE2.entries.push_back({ EnemyType::LIGHT_TANK, 5, 1.2f, 1 });
+	waveE2.entries.push_back({ EnemyType::LIGHT_TANK, 3, 1.2f, 0 });
+    waveE2.entries.push_back({ EnemyType::HEAVY_TANK, 2, 1.4f, 1 });
 	waveE2.entries.push_back({ EnemyType::LIGHT_PLANE, 5, 1.0f, 0 });
-	waveE2.entries.push_back({ EnemyType::MEDIUM_TANK, 5, 2.5f, 0 });
-	waveE2.entries.push_back({ EnemyType::LIGHT_PLANE, 5, 1.5f, 0 });
-	waveE2.entries.push_back({ EnemyType::MEDIUM_PLANE, 5, 2.5f, 1 });
-	waveE2.entries.push_back({ EnemyType::HEAVY_PLANE, 3, 3.5f, 0 });
-    waveE2.entries.push_back({ EnemyType::HEAVY_TANK, 3, 3.5f, 1 });
-    waveE2.entries.push_back({ EnemyType::HEAVY_TANK, 3, 3.5f, 0 });
+	waveE2.entries.push_back({ EnemyType::MEDIUM_TANK, 5, 2.0f, 0 });
+	waveE2.entries.push_back({ EnemyType::LIGHT_PLANE, 5, 1.0f, 0 });
+	waveE2.entries.push_back({ EnemyType::MEDIUM_PLANE, 5, 1.5f, 1 });
+	waveE2.entries.push_back({ EnemyType::HEAVY_PLANE, 3, 2.0f, 0 });
+    waveE2.entries.push_back({ EnemyType::HEAVY_TANK, 3, 2.3f, 1 });
+    waveE2.entries.push_back({ EnemyType::HEAVY_TANK, 3, 2.3f, 0 });
 	m5.waves.push_back(waveE2);
 	Wave waveE3;
 	waveE3.waveNumber = 3;
-    waveE3.entries.push_back({ EnemyType::HEAVY_PLANE, 2, 3.5f, 1 });
-	waveE3.entries.push_back({ EnemyType::SOLDIER, 20, 0.4f, 0 });
-    waveE3.entries.push_back({ EnemyType::LIGHT_PLANE, 7, 1.5f, 0 });
-	waveE3.entries.push_back({ EnemyType::LIGHT_TANK, 7, 2.0f, 1 });
-    waveE3.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 3.0f, 0 });
-	waveE3.entries.push_back({ EnemyType::MEDIUM_PLANE, 4, 2.5f, 1 });
-	waveE3.entries.push_back({ EnemyType::MEDIUM_TANK, 7, 3.0f, 0 });
-	waveE3.entries.push_back({ EnemyType::HEAVY_TANK, 2, 4.0f, 1 });
-	waveE3.entries.push_back({ EnemyType::SOLDIER, 20, 0.4f, 1 });
-	waveE3.entries.push_back({ EnemyType::LIGHT_PLANE, 7, 1.5f, 0 });
-	waveE3.entries.push_back({ EnemyType::MEDIUM_PLANE, 7, 2.5f, 1 });
-    waveE3.entries.push_back({ EnemyType::MEDIUM_TANK, 5, 4.0f, 1 });
-	waveE3.entries.push_back({ EnemyType::HEAVY_PLANE, 5, 3.5f, 0 });
-	waveE3.entries.push_back({ EnemyType::SOLDIER, 20, 0.4f, 1 });
-    waveE3.entries.push_back({ EnemyType::LIGHT_TANK, 7, 2.0f, 0 });
-	waveE3.entries.push_back({ EnemyType::HEAVY_TANK, 4, 4.5f, 0 });
+    waveE3.entries.push_back({ EnemyType::HEAVY_PLANE, 2, 1.0f, 1 });
+	waveE3.entries.push_back({ EnemyType::SOLDIER, 20, 0.2f, 0 });
+    waveE3.entries.push_back({ EnemyType::LIGHT_PLANE, 7, 1.0f, 0 });
+	waveE3.entries.push_back({ EnemyType::LIGHT_TANK, 4, 1.2f, 1 });
+    waveE3.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 1.6f, 1 });
+    waveE3.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 1.3f, 0 });
+	waveE3.entries.push_back({ EnemyType::MEDIUM_PLANE, 4, 1.0f, 1 });
+	waveE3.entries.push_back({ EnemyType::MEDIUM_TANK, 7, 1.2f, 0 });
+	waveE3.entries.push_back({ EnemyType::HEAVY_TANK, 2, 1.0f, 1 });
+	waveE3.entries.push_back({ EnemyType::SOLDIER, 20, 0.2f, 1 });
+	waveE3.entries.push_back({ EnemyType::LIGHT_PLANE, 7, 1.0f, 0 });
+	waveE3.entries.push_back({ EnemyType::MEDIUM_PLANE, 7, 1.3f, 1 });
+    waveE3.entries.push_back({ EnemyType::MEDIUM_TANK, 5, 1.0f, 1 });
+	waveE3.entries.push_back({ EnemyType::HEAVY_PLANE, 5, 1.0f, 0 });
+	waveE3.entries.push_back({ EnemyType::SOLDIER, 20, 0.2f, 1 });
+    waveE3.entries.push_back({ EnemyType::LIGHT_TANK, 7, 1.4f, 0 });
+	waveE3.entries.push_back({ EnemyType::HEAVY_TANK, 4, 1.5f, 0 });
 	m5.waves.push_back(waveE3);
 	Wave waveE4;
 	waveE4.waveNumber = 4;
-	waveE4.entries.push_back({ EnemyType::SOLDIER, 30, 0.3f, 0 });
-	waveE4.entries.push_back({ EnemyType::LIGHT_PLANE, 10, 1.5f, 0 });
-	waveE4.entries.push_back({ EnemyType::LIGHT_TANK, 15, 3.0f, 1 });
-	waveE4.entries.push_back({ EnemyType::LIGHT_TANK, 15, 3.0f, 0 });
-	waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 7, 2.5f, 1 });
-	waveE4.entries.push_back({ EnemyType::MEDIUM_TANK, 10, 5.0f, 0 });
-	waveE4.entries.push_back({ EnemyType::HEAVY_TANK, 7, 9.0f, 0 });
-	waveE4.entries.push_back({ EnemyType::LIGHT_PLANE, 10, 1.5f, 0 });
-	waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 10, 2.5f, 1 });
-	waveE4.entries.push_back({ EnemyType::HEAVY_PLANE, 7, 3.5f, 0 });
-	waveE4.entries.push_back({ EnemyType::SOLDIER, 30, 0.3f, 1 });
-	waveE4.entries.push_back({ EnemyType::HEAVY_TANK, 10, 9.0f, 1 });
+	waveE4.entries.push_back({ EnemyType::SOLDIER, 30, 0.2f, 0 });
+	waveE4.entries.push_back({ EnemyType::LIGHT_PLANE, 10, 1.2f, 0 });
+	waveE4.entries.push_back({ EnemyType::LIGHT_TANK, 5, 1.2f, 1 });
+	waveE4.entries.push_back({ EnemyType::LIGHT_TANK, 5, 1.2f, 0 });
+    waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 7, 1.8f, 1 });
+    waveE4.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 1.9f, 1 });
+    waveE4.entries.push_back({ EnemyType::HEAVY_PLANE, 5, 2.2f, 0 });
+    waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 2, 0.8f, 1 });
+    waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 2, 0.8f, 1 });
+    waveE4.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 1.0f, 1 });
+    waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 2, 0.8f, 1 });
+    waveE4.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 1.0f, 1 });
+    waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 2, 0.8f, 1 });
+	waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 4, 1.8f, 1 });
+	waveE4.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 2.0f, 0 });
+	waveE4.entries.push_back({ EnemyType::HEAVY_TANK, 2, 3.0f, 0 });
+	waveE4.entries.push_back({ EnemyType::LIGHT_PLANE, 4, 1.5f, 0 });
+	waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 2, 0.8f, 1 });
+	waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 2, 0.8f, 1 });
+    waveE4.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 1.0f, 1 });
+    waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 2, 0.8f, 1 });
+    waveE4.entries.push_back({ EnemyType::MEDIUM_PLANE, 2, 0.8f, 1 });
+	waveE4.entries.push_back({ EnemyType::HEAVY_PLANE, 3, 2.5f, 0 });
+    waveE4.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 1.9f, 1 });
 	m5.waves.push_back(waveE4);
 	Wave waveE5;
 	waveE5.waveNumber = 5;
@@ -451,45 +479,88 @@ Game::Game()
 	waveE5.entries.push_back({ EnemyType::SOLDIER, 40, 0.2f, 1 });
 	waveE5.entries.push_back({ EnemyType::HEAVY_TANK, 5, 3.0f, 1 });
 	waveE5.entries.push_back({ EnemyType::HEAVY_PLANE, 5, 3.5f, 0 });
-	waveE5.entries.push_back({ EnemyType::LIGHT_PLANE, 20, 2.2f, 0 });
+	waveE5.entries.push_back({ EnemyType::LIGHT_PLANE, 20, 1.2f, 0 });
 	waveE5.entries.push_back({ EnemyType::MEDIUM_TANK, 10, 2.5f, 0 });
 	waveE5.entries.push_back({ EnemyType::LIGHT_TANK, 20, 2.0f, 1 });
 	waveE5.entries.push_back({ EnemyType::HEAVY_TANK, 8, 8.0f, 1 });
 	m5.waves.push_back(waveE5);
 	Wave waveE6;
-	waveE6.waveNumber = 6;
+	waveE6.waveNumber = 5;
 	waveE6.entries.push_back({ EnemyType::SOLDIER, 20, 0.2f, 0 });
-	waveE6.entries.push_back({ EnemyType::SOLDIER, 20, 0.2f, 1 });
-	waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 1 });
-	waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 0 });
-    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 1 });
-    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 1 });
-    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 1 });
-    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 0 });
-    waveE6.entries.push_back({ EnemyType::LIGHT_PLANE, 9, 2.0f, 1 });
-    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 1 });
-    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 0 });
-    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 0 });
-    waveE6.entries.push_back({ EnemyType::LIGHT_TANK, 6, 2.0f, 0 });
-    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 0 });
-    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 1 });
-    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 0 });
-    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 5.0f, 1 });
-    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 5.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::BOSS, 1, 3.5f, 0 });
+	waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 1.5f, 1 });
+	waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 5, 1.0f, 0 });
+    waveE6.entries.push_back({ EnemyType::BOSS, 1, 3.5f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 2.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 1.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 2.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 1.0f, 0 });
+    waveE6.entries.push_back({ EnemyType::LIGHT_PLANE, 9, 0.3f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 1.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 0.5f, 0 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 7, 1.5f, 0 });
+    waveE6.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 0.9f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 5, 1.0f, 0 });
+    waveE6.entries.push_back({ EnemyType::MEDIUM_PLANE, 4, 0.3f, 1 });
+    waveE6.entries.push_back({ EnemyType::MEDIUM_TANK, 8, 0.4f, 0 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 4, 1.5f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 1.8f, 0 });
+    waveE6.entries.push_back({ EnemyType::LIGHT_TANK, 6, 1.2f, 0 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 0.5f, 0 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 2.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 0.5f, 0 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_TANK, 5, 1.0f, 1 });
+    waveE6.entries.push_back({ EnemyType::HEAVY_PLANE, 10, 0.5f, 1 });
     m5.waves.push_back(waveE6);
 	availableMaps.push_back(m5);
 
+	//Bitwa o Berlin
+    MapInfo m6;
+	m6.mapFile = "maps/map6.txt";
+    m6.enemyTexturePrefix = "USSR";
+	m6.playerCoins = 15000;
+	m6.Soundtracknumber = 3;
+	m6.mapName = "Bitwa o Berlin";
+    Wave waveF1;
+    waveF1.waveNumber = 1;
+	waveF1.entries.push_back({ EnemyType::BOSS, 1, 0.2f, 0 });
+    waveF1.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 2.0f, 0 });
+	waveF1.entries.push_back({ EnemyType::BOSS, 1, 2.0f, 1 });
+    waveF1.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 3.0f, 0 });
+    waveF1.entries.push_back({ EnemyType::BOSS, 1, 6.0f, 0 });
+    waveF1.entries.push_back({ EnemyType::SOLDIER, 10, 0.3f, 0 });
+    waveF1.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 2.6f, 1 });
+    waveF1.entries.push_back({ EnemyType::LIGHT_TANK, 3, 2.0f, 1 });
+    waveF1.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 2.3f, 0 });
+    waveF1.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 2.0f, 0 });
+    waveF1.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 3.0f, 1 });
+    waveF1.entries.push_back({ EnemyType::SOLDIER, 10, 0.3f, 1 });
+    waveF1.entries.push_back({ EnemyType::LIGHT_PLANE, 3, 2.0f, 0 });
+	waveF1.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 2.6f, 1 });
+    waveF1.entries.push_back({ EnemyType::MEDIUM_TANK, 3, 3.0f, 0 });
+    waveF1.entries.push_back({ EnemyType::MEDIUM_PLANE, 3, 3.0f, 0 });
+	m6.waves.push_back(waveF1);
+	availableMaps.push_back(m6);
+
     // Load selected map
     loadMapByIndex(selectedMapIndex);
+
+    // IMPORTANT: start from main menu
+    gameState = GameState::MAIN_MENU;
+
+    // Start main menu music (loop)
+    soundManager.playBackground("music/main_menu_music.mp3", true, 20.0f);
+    g_menuMusicPlaying = true;
+
+    std::cerr << "[BOOT] gameState set to MAIN_MENU\n";
+
+    std::cerr << "[BOOT] Game::Game() end\n";
 
     // HUD texture
     const std::string hudPath = "assets/ui/hud.png";
     if (!hudTexture.loadFromFile(hudPath)) {
         std::cerr << "Nie mozna za³adowaæ HUD: " << hudPath << '\n';
-        hudSprite.reset();
-    } else {
-        hudSprite = std::make_unique<sf::Sprite>(hudTexture);
-        hudSprite->setPosition({ static_cast<float>(window.getSize().x) - static_cast<float>(hudTexture.getSize().x) - 10.0f, 10.0f });
+        // NOTE: we don't keep a persistent sprite; we draw from texture each frame when valid.
     }
 
 	// Stats table texture
@@ -510,6 +581,7 @@ Game::Game()
     if (!level4Texture.loadFromFile("assets/towers/level4.png")) {
         std::cerr << "Nie mozna zaladowac tekstury poziomu 4: assets/towers/level4.png" << std::endl;
 	}   
+
 
     // load bullet textures (best effort)
     if(!bulletTextures[TowerType::INFANTRY_POST].loadFromFile("assets/bullets/IP_bullet.png")){
@@ -534,7 +606,107 @@ Game::Game()
         std::cerr << "Nie mo¿na za³adowaæ czcionki: assets/font/SFC_Rimowa.ttf" << std::endl;
         font = sf::Font(); // U¿yj domyœlnej czcionki SFML
     }
-	//HP text
+
+	//In game menu 
+    if (!inGameMenuTexture.loadFromFile("assets/ui/pause_panel.png")) {
+        std::cerr << "Nie mozna za³adowac tekstury menu w grze: assets/ui/pause_panel.png" << std::endl;
+	} else {
+        inGameMenuSprite = std::make_unique<sf::Sprite>(inGameMenuTexture);
+        inGameMenuSprite->setOrigin({ inGameMenuTexture.getSize().x / 2.0f, inGameMenuTexture.getSize().y / 2.0f });
+        inGameMenuSprite->setPosition({ static_cast<float>(window.getSize().x) / 2.0f, static_cast<float>(window.getSize().y) / 2.0f });
+	}
+    if (!resumeButtonTexture.loadFromFile("assets/ui/button_resume.png")) {
+        std::cerr << "Nie mozna za³adowac tekstury przycisku wznowienia: assets/ui/button_resume.png" << std::endl;
+    } else {
+        resumeButtonSprite = std::make_unique<sf::Sprite>(resumeButtonTexture); //resume
+        resumeButtonSprite->setOrigin({ resumeButtonTexture.getSize().x / 2.0f, resumeButtonTexture.getSize().y / 2.0f });
+        resumeButtonSprite->setPosition({ static_cast<float>(window.getSize().x) / 2.0f, static_cast<float>(window.getSize().y - 80.0f) / 2.0f - 193.0f });
+	}
+    if (!mainMenuButtonTexture.loadFromFile("assets/ui/button_quit.png")) {
+        std::cerr << "Nie mozna za³adowac tekstury przycisku menu g³ównego: assets/ui/button_quit.png" << std::endl;
+    }
+    else {
+        mainMenuButtonSprite = std::make_unique<sf::Sprite>(mainMenuButtonTexture); //quit
+        mainMenuButtonSprite->setOrigin({ mainMenuButtonTexture.getSize().x / 2.0f, mainMenuButtonTexture.getSize().y / 2.0f });
+        mainMenuButtonSprite->setPosition({ static_cast<float>(window.getSize().x) / 2.0f, static_cast<float>(window.getSize().y) / 2.0f + 148.0f });
+    }
+    if (!restartButtonTexture.loadFromFile("assets/ui/button_restart.png")) {
+        std::cerr << "Nie mozna za³adowac tekstury przycisku restartu: assets/ui/button_restart.png" << std::endl;
+    } else
+    {
+		restartButtonSprite = std::make_unique<sf::Sprite>(restartButtonTexture); //restart
+        restartButtonSprite->setOrigin({ restartButtonTexture.getSize().x / 2.0f, restartButtonTexture.getSize().y / 2.0f });
+		restartButtonSprite->setPosition({ static_cast<float>(window.getSize().x) / 2.0f, static_cast<float>(window.getSize().y) / 2.0f - 42.0f});
+    }
+    if (!soundOnTexture.loadFromFile("assets/ui/sfx_on.png")) {
+        std::cerr << "Nie mozna za³adowac tekstury przycisku dŸwiêku w³¹czonego: assets/ui/sound_on.png" << std::endl;
+	} else{
+        soundButtonSprite = std::make_unique<sf::Sprite>(soundOnTexture); //sound
+		soundButtonSprite->setOrigin({ soundOnTexture.getSize().x / 2.0f, soundOnTexture.getSize().y / 2.0f });
+		soundButtonSprite->setPosition({ static_cast<float>(window.getSize().x) / 2.0f, static_cast<float>(window.getSize().y)/ 2.0f + 371.0f });
+	}
+    if (!soundOffTexture.loadFromFile("assets/ui/sfx_off.png")) {
+        std::cerr << "Nie mozna za³adowac tekstury przycisku dŸwiêku wy³¹czonego: assets/ui/sound_off.png" << std::endl;
+	}
+
+    // --- Guidebook / Help assets (pause menu) ---
+    if (!helpButtonTexture.loadFromFile("assets/ui/button_help.png")) {
+        std::cerr << "Nie mozna zaladowac: assets/ui/button_help.png" << std::endl;
+    } else {
+        helpButtonSprite = std::make_unique<sf::Sprite>(helpButtonTexture);
+        helpButtonSprite->setOrigin({ helpButtonTexture.getSize().x / 2.0f, helpButtonTexture.getSize().y / 2.0f });
+        // Below sound button (same X as other pause buttons)
+        helpButtonSprite->setPosition({ static_cast<float>(window.getSize().x) / 2.0f, static_cast<float>(window.getSize().y) / 2.0f + 610.0f });
+    }
+
+    if (!guidebook1Texture.loadFromFile("assets/ui/guidebook/guidebook1.png")) {
+        std::cerr << "Nie mozna zaladowac: assets/ui/guidebook/guidebook1.png" << std::endl;
+    } else {
+        guidebook1Texture.setSmooth(true);
+    }
+    if (!guidebook2Texture.loadFromFile("assets/ui/guidebook/guidebook2.png")) {
+        std::cerr << "Nie mozna zaladowac: assets/ui/guidebook/guidebook2.png" << std::endl;
+    } else {
+        guidebook2Texture.setSmooth(true);
+    }
+    if (guidebook1Texture.getSize().x > 0 && guidebook1Texture.getSize().y > 0) {
+        guidebookSprite = std::make_unique<sf::Sprite>(guidebook1Texture);
+        guidebookSprite->setOrigin({ guidebook1Texture.getSize().x / 2.0f, guidebook1Texture.getSize().y / 2.0f });
+        guidebookSprite->setPosition({ static_cast<float>(window.getSize().x) / 2.0f, static_cast<float>(window.getSize().y) / 2.0f });
+    }
+
+    if (!changePageButtonTexture.loadFromFile("assets/ui/button_change_page.png")) {
+        std::cerr << "Nie mozna zaladowac: assets/ui/button_change_page.png" << std::endl;
+    } else {
+        changePageButtonSprite = std::make_unique<sf::Sprite>(changePageButtonTexture);
+        changePageButtonSprite->setOrigin({ changePageButtonTexture.getSize().x / 2.0f, changePageButtonTexture.getSize().y / 2.0f });
+        // Bottom-right corner
+        const auto winSize = window.getSize();
+        const auto texSize = changePageButtonTexture.getSize();
+        changePageButtonSprite->setPosition({ static_cast<float>(winSize.x) - static_cast<float>(texSize.x) / 2.0f - 40.0f,
+                                              static_cast<float>(winSize.y) - static_cast<float>(texSize.y) / 2.0f - 40.0f });
+    }
+
+    // UI: upgrade cost label (hidden by default; positioned when menu opens)
+    upgradeCostText.setCharacterSize(28);
+    upgradeCostText.setFillColor(sf::Color::White);
+    upgradeCostText.setOutlineColor(sf::Color::Black);
+    upgradeCostText.setOutlineThickness(3.0f);
+    upgradeCostText.setString("");
+    if (!backFromGuideButtonTexture.loadFromFile("assets/ui/btn_back.png")) {
+        std::cerr << "Nie mozna zaladowac: assets/ui/btn_back.png" << std::endl;
+    } else {
+        backFromGuideButtonSprite = std::make_unique<sf::Sprite>(backFromGuideButtonTexture);
+        backFromGuideButtonSprite->setOrigin({ backFromGuideButtonTexture.getSize().x / 2.0f, backFromGuideButtonTexture.getSize().y / 2.0f });
+        // Bottom-left corner
+        const auto texSize = backFromGuideButtonTexture.getSize();
+        backFromGuideButtonSprite->setPosition({ static_cast<float>(texSize.x) / 2.0f + 40.0f,
+                                                 static_cast<float>(window.getSize().y) - static_cast<float>(texSize.y) / 2.0f - 40.0f });
+    }
+
+
+
+    // HP text
     HPText.setString(to_string(PlayerHP) + "/100");
     HPText.setCharacterSize(40);
     HPText.setFillColor(sf::Color::White);
@@ -543,7 +715,7 @@ Game::Game()
     HPText.setOrigin({ HPText.getLocalBounds().size.x / 2.0f, HPText.getLocalBounds().size.y / 2.0f });
     HPText.setPosition({ 2325.0f, 28.0f });
 
-    //Coins text
+    // Coins text
     CoinsText.setString(to_string(PlayerCoins));
     CoinsText.setCharacterSize(40);
     CoinsText.setFillColor(sf::Color::White);
@@ -575,6 +747,20 @@ Game::Game()
 	KillsText.setOutlineThickness(4.0f);
 	KillsText.setPosition({ (float)window.getSize().x - ((float)statsTableTexture.getSize().x / 2.0f), 1502.0f });
 
+    //Map name text
+	MapNameText.setCharacterSize(25);
+	MapNameText.setFillColor(sf::Color::White);
+	MapNameText.setOutlineColor(sf::Color::Black);
+	MapNameText.setOutlineThickness(4.0f);
+	MapNameText.setOrigin({ MapNameText.getLocalBounds().size.x / 2.0f, MapNameText.getLocalBounds().size.y / 2.0f });
+	MapNameText.setPosition({ (float)window.getSize().x - ((float)statsTableTexture.getSize().x / 2.0f) + 4.0f, 1332.0f });
+
+    MapNameTextBigger.setCharacterSize(40);
+    MapNameTextBigger.setFillColor(sf::Color::White);
+    MapNameTextBigger.setOutlineColor(sf::Color::Black);
+    MapNameTextBigger.setOutlineThickness(4.0f);
+    MapNameTextBigger.setOrigin({ MapNameTextBigger.getLocalBounds().size.x / 2.0f, MapNameTextBigger.getLocalBounds().size.y / 2.0f });
+    MapNameTextBigger.setPosition({ (float)window.getSize().x / 2.0f, (float)window.getSize().y / 2.0f - 470.0f });
 
     // W konstruktorze po za³adowaniu mapy - ³adujemy tekstury raz:
     for (const auto& item : TOWER_CONFIGS) {
@@ -641,6 +827,13 @@ Game::Game()
     } else {
         std::cerr << "Nie mozna za³adowaæ victory.png (assets/ui/victory.png)" << std::endl;
     }
+    if (mainMenuEndButtonTexture.loadFromFile("assets/ui/button_quit_big.png")) {
+        mainMenuEndButtonSprite = std::make_unique<sf::Sprite>(mainMenuEndButtonTexture);
+        mainMenuEndButtonSprite->setOrigin({ (float)mainMenuEndButtonTexture.getSize().x / 2.0f, (float)mainMenuEndButtonTexture.getSize().y / 2.0f });
+        mainMenuEndButtonSprite->setPosition({ (float)window.getSize().x / 2.0f - 185.0f, (float)window.getSize().y / 2.0f + 585.0f});
+    } else {
+        std::cerr << "Nie mozna za³adowaæ main_menu.png (assets/ui/button_quit_big.png)" << std::endl;
+	}
 
     // End screen buttons
     if (repeatButtonTexture.loadFromFile("assets/ui/button_repeat.png")) {
@@ -662,12 +855,26 @@ Game::Game()
     screenOverlay.setSize({ (float)window.getSize().x, (float)window.getSize().y });
     screenOverlay.setFillColor(sf::Color(0, 0, 0, 120));
 
-    // UI: remove old rectangles (start/stop)
-    // Start first wave (disabled by default) -- don't auto-start
-    // waveManager.startNextWave();
+    // --- Artillery explosion animation frames (6 frames) ---
+    // Your current files are GIFs: frame_0_delay-0.15s.gif .. frame_5_delay-0.15s.gif
+    // If you convert them to PNG, keep the same naming and just change extension here.
+    explosionFrameTextures.clear();
+    explosionFrames.clear();
+    explosionFrameTextures.resize(6);
+
+    for (int i = 0; i < 6; ++i) {
+        const std::string path = "assets/bullets/explosion/frame_" + std::to_string(i) + "_delay-0.15s.gif";
+        if (!explosionFrameTextures[i].loadFromFile(path)) {
+            std::cerr << "Nie mozna za³adowaæ klatki eksplozji: " << path << std::endl;
+        } else {
+            explosionFrames.push_back(&explosionFrameTextures[i]);
+        }
+    }
+
 }
 
 void Game::run() {
+    std::cerr << "[BOOT] Game::run() entering loop\n";
     sf::Clock clock;
     while (isRunning && window.isOpen()) {
         float dt = clock.restart().asSeconds();
@@ -675,6 +882,7 @@ void Game::run() {
         update(dt);
         render();
     }
+    std::cerr << "[BOOT] Game::run() exiting loop\n";
 }
 
 void Game::processEvents() {
@@ -684,10 +892,156 @@ void Game::processEvents() {
             window.close();
         }
 
+        // --- MAIN MENU INPUT ---
+        if (gameState == GameState::MAIN_MENU) {
+            // Ensure menu music is playing when we are in menu
+            if (!g_menuMusicPlaying) {
+                soundManager.playBackground("music/main_menu_music.mp3", true, 20.0f);
+                g_menuMusicPlaying = true;
+            }
+
+            logOnce("[MENU] processEvents() in MAIN_MENU");
+
+            if (auto mouseEvent = event->getIf<sf::Event::MouseButtonPressed>()) {
+                if (mouseEvent->button == sf::Mouse::Button::Left) {
+                    soundManager.playClickSound();
+                    const sf::Vector2f mousePos(static_cast<float>(mouseEvent->position.x), static_cast<float>(mouseEvent->position.y));
+                    const int action = mainMenu.update(mousePos, true);
+                    std::cerr << "[MENU] click action=" << action << "\n";
+
+                    if (action == 1) {
+                        mainMenu.switchToLevelSelect();
+                        std::cerr << "[MENU] switched to LEVEL_SELECT\n";
+                    } else if (action == 2) {
+                        // Quit game
+                        isRunning = false;
+                        window.close();
+                    } else if (action == 3) {
+                        // Back to main menu (from level select)
+                        mainMenu.switchToMainMenu();
+                    } else if (action >= 100) {
+                        const int mapIndex = action - 100;
+                        std::cerr << "[MENU] start map index=" << mapIndex << "\n";
+
+                        // Switch away from menu music. loadMapByIndex will start the map music.
+                        g_menuMusicPlaying = false;
+
+                        startPlayingMap(mapIndex);
+                    }
+                }
+            }
+            continue;
+        }
+
+        // --- PAUSE MENU INPUT (must be handled before gameOver/gameplay clicks) ---
+        if (inGameMenuActive) {
+            if (auto mouseEvent = event->getIf<sf::Event::MouseButtonPressed>()) {
+                if (mouseEvent->button == sf::Mouse::Button::Left) {
+                    soundManager.playClickSound();
+                    const sf::Vector2f mouseWindowPos(static_cast<float>(mouseEvent->position.x), static_cast<float>(mouseEvent->position.y));
+                    std::cerr << "[PAUSE] click at " << mouseWindowPos.x << "," << mouseWindowPos.y << "\n";
+
+                    // If guidebook is active, only guidebook-related buttons work
+                    if (guidebookActive) {
+                        if (backFromGuideButtonSprite && backFromGuideButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+                            guidebookActive = false;
+                            continue;
+                        }
+                        if (changePageButtonSprite && changePageButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+                            guidebookPage = (guidebookPage == 1) ? 2 : 1;
+							soundManager.playPageFlipSound();
+                            if (guidebookSprite) {
+                                guidebookSprite->setTexture(guidebookPage == 1 ? guidebook1Texture : guidebook2Texture);
+                                const sf::Texture* activeTex = (guidebookPage == 1 ? &guidebook1Texture : &guidebook2Texture);
+                                guidebookSprite->setOrigin({ activeTex->getSize().x / 2.0f, activeTex->getSize().y / 2.0f });
+                                guidebookSprite->setPosition({ static_cast<float>(window.getSize().x) / 2.0f, static_cast<float>(window.getSize().y) / 2.0f });
+                            }
+                            continue;
+                        }
+                        continue;
+                    }
+
+                    if (resumeButtonSprite) {
+                        const bool hit = resumeButtonSprite->getGlobalBounds().contains(mouseWindowPos);
+                        std::cerr << "[PAUSE] resume hit=" << hit << "\n";
+                        if (hit) {
+                            inGameMenuActive = false;
+                            continue;
+                        }
+                    }
+
+                    if (restartButtonSprite) {
+                        const bool hit = restartButtonSprite->getGlobalBounds().contains(mouseWindowPos);
+                        std::cerr << "[PAUSE] restart hit=" << hit << "\n";
+                        if (hit) {
+                            inGameMenuActive = false;
+                            restartCurrentLevel();
+                            continue;
+                        }
+                    }
+
+                    if (mainMenuButtonSprite) {
+                        const bool hit = mainMenuButtonSprite->getGlobalBounds().contains(mouseWindowPos);
+                        std::cerr << "[PAUSE] main menu hit=" << hit << "\n";
+                        if (hit) {
+                            std::cerr << "[MENU] Returning to MAIN_MENU from pause\n";
+                            inGameMenuActive = false;
+                            guidebookActive = false;
+                            victory = false;
+                            gameOver = false;
+
+                            towers.clear();
+                            enemies.clear();
+                            projectiles.clear();
+                            levelIcons.clear();
+                            closeTowerMenu();
+                            closeTowerActionMenu();
+                            map.clearPathsAndBuildAreas();
+
+                            // menu music will be ensured on next menu input pass
+                            g_menuMusicPlaying = false;
+
+                            // Reset menu state (Menu is non-copyable in SFML 3, so reconstruct it in-place)
+                            mainMenu.~Menu();
+                            new (&mainMenu) Menu();
+                            gameState = GameState::MAIN_MENU;
+                            continue;
+                        }
+                    }
+
+                    if (soundButtonSprite) {
+                        const bool hit = soundButtonSprite->getGlobalBounds().contains(mouseWindowPos);
+                        std::cerr << "[PAUSE] sound hit=" << hit << "\n";
+                        if (hit) {
+                            soundOn = !soundOn;
+                            soundButtonSprite->setTexture(soundOn ? soundOnTexture : soundOffTexture);
+                            continue;
+                        }
+                    }
+
+                    if (helpButtonSprite) {
+                        const bool hit = helpButtonSprite->getGlobalBounds().contains(mouseWindowPos);
+                        if (hit) {
+                            guidebookActive = true;
+                            guidebookPage = 1;
+                            if (guidebookSprite) {
+                                guidebookSprite->setTexture(guidebook1Texture);
+                                guidebookSprite->setOrigin({ guidebook1Texture.getSize().x / 2.0f, guidebook1Texture.getSize().y / 2.0f });
+                                guidebookSprite->setPosition({ static_cast<float>(window.getSize().x) / 2.0f, static_cast<float>(window.getSize().y) / 2.0f });
+                            }
+                            continue;
+                        }
+                    }
+                }
+            }
+            continue;
+        }
+
         // If game over, handle clicks only on overlay buttons
         if (gameOver) {
             if (auto mouseEvent = event->getIf<sf::Event::MouseButtonPressed>()) {
                 if (mouseEvent->button == sf::Mouse::Button::Left) {
+                    soundManager.playClickSound();
                     sf::Vector2f mouseWindowPos(static_cast<float>(mouseEvent->position.x), static_cast<float>(mouseEvent->position.y));
                     if (!victory) {
                         // defeat: click repeat button
@@ -697,12 +1051,125 @@ void Game::processEvents() {
                             victory = false;
                             restartCurrentLevel();
                         }
+                        if (mainMenuEndButtonSprite && mainMenuEndButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+                            // Return to main menu (do NOT close the window)
+                            std::cerr << "[MENU] Returning to MAIN_MENU from defeat screen\n";
+                            gameOver = false;
+                            victory = false;
+                            towers.clear();
+                            enemies.clear();
+                            projectiles.clear();
+                            levelIcons.clear();
+                            closeTowerMenu();
+                            closeTowerActionMenu();
+                            map.clearPathsAndBuildAreas();
+                            // menu music will be ensured on next menu input pass
+                            g_menuMusicPlaying = false;
+                            mainMenu.~Menu();
+                            new (&mainMenu) Menu();
+                            gameState = GameState::MAIN_MENU;
+						}
                     } else {
                         // victory: click continue button
                         if (continueButtonSprite && continueButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
                             gameOver = false;
                             victory = false;
                             goToNextMap();
+                        }
+                        if (mainMenuEndButtonSprite && mainMenuEndButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+                            // Return to main menu (do NOT close the window)
+                            std::cerr << "[MENU] Returning to MAIN_MENU from defeat screen\n";
+                            gameOver = false;
+                            victory = false;
+                            towers.clear();
+                            enemies.clear();
+                            projectiles.clear();
+                            levelIcons.clear();
+                            closeTowerMenu();
+                            closeTowerActionMenu();
+                            map.clearPathsAndBuildAreas();
+                            // menu music will be ensured on next menu input pass
+                            g_menuMusicPlaying = false;
+                            mainMenu.~Menu();
+                            new (&mainMenu) Menu();
+                            gameState = GameState::MAIN_MENU;
+                        }
+                    }
+                }
+            }
+            continue;
+        }
+
+        if (inGameMenuActive) {
+            if (auto mouseEvent = event->getIf<sf::Event::MouseButtonPressed>()) {
+                if (mouseEvent->button == sf::Mouse::Button::Left) {
+                    soundManager.playClickSound();
+                    sf::Vector2f mouseWindowPos(static_cast<float>(mouseEvent->position.x), static_cast<float>(mouseEvent->position.y));
+
+                    // If guidebook is active, only guidebook-related buttons work
+                    if (guidebookActive) {
+                        if (backFromGuideButtonSprite && backFromGuideButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+                            guidebookActive = false;
+                        }
+                        if (changePageButtonSprite && changePageButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+                            guidebookPage = (guidebookPage == 1) ? 2 : 1;
+                            if (guidebookSprite) {
+                                guidebookSprite->setTexture(guidebookPage == 1 ? guidebook1Texture : guidebook2Texture);
+                                const sf::Texture* activeTex = (guidebookPage == 1 ? &guidebook1Texture : &guidebook2Texture);
+                                guidebookSprite->setOrigin({ activeTex->getSize().x / 2.0f, activeTex->getSize().y / 2.0f });
+                                guidebookSprite->setPosition({ static_cast<float>(window.getSize().x) / 2.0f, static_cast<float>(window.getSize().y) / 2.0f });
+                            }
+                        }
+                        continue;
+                    }
+
+                    if (resumeButtonSprite && resumeButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+                        inGameMenuActive = false;
+                    }
+                    if (mainMenuButtonSprite && mainMenuButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+                        // Return to main menu (do NOT close the window)
+                        std::cerr << "[MENU] Returning to MAIN_MENU from pause\n";
+                        inGameMenuActive = false;
+                        gameOver = false;
+                        victory = false;
+
+                        towers.clear();
+                        enemies.clear();
+                        projectiles.clear();
+                        levelIcons.clear();
+                        closeTowerMenu();
+                        closeTowerActionMenu();
+                        map.clearPathsAndBuildAreas();
+
+                        // menu music will be ensured on next menu input pass
+                        g_menuMusicPlaying = false;
+
+                        mainMenu.~Menu();
+                        new (&mainMenu) Menu();
+                        gameState = GameState::MAIN_MENU;
+                        continue;
+                    }
+                    if (restartButtonSprite && restartButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+                        inGameMenuActive = false;
+                        restartCurrentLevel();
+                    }
+                    if (soundButtonSprite && soundButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+						 soundOn = !soundOn;
+						 if (soundOn) {
+							 soundButtonSprite->setTexture(soundOnTexture);
+						 }
+                         else {
+                             soundButtonSprite->setTexture(soundOffTexture);
+                         }
+                     }
+
+                    if (helpButtonSprite && helpButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
+                        guidebookActive = true;
+                        guidebookPage = 1;
+                        if (guidebookSprite) {
+                            guidebookSprite->setTexture(guidebook1Texture);
+                            guidebookSprite->setOrigin({ guidebook1Texture.getSize().x / 2.0f, guidebook1Texture.getSize().y / 2.0f });
+                            guidebookSprite->setPosition({ static_cast<float>(window.getSize().x) / 2.0f, static_cast<float>(window.getSize().y) / 2.0f });
                         }
                     }
                 }
@@ -713,6 +1180,7 @@ void Game::processEvents() {
         // Klikniêcie myszk¹
         if (auto mouseEvent = event->getIf<sf::Event::MouseButtonPressed>()) {
             if (mouseEvent->button == sf::Mouse::Button::Left) {
+                soundManager.playClickSound();
                 sf::Vector2i pixelPos(mouseEvent->position.x, mouseEvent->position.y);
                 sf::Vector2f worldPos = window.mapPixelToCoords(pixelPos);
                 sf::Vector2f mouseWindowPos(static_cast<float>(mouseEvent->position.x), static_cast<float>(mouseEvent->position.y));
@@ -738,6 +1206,7 @@ void Game::processEvents() {
                 if (waveButtonSprite && waveButtonSprite->getGlobalBounds().contains(mouseWindowPos)) {
                     if (!waveManager.isActive()) {
                         waveManager.startNextWave();
+						soundManager.playStartWaveSound();
                         currentWaveNumber++;
                         WaveText.setString(to_string(currentWaveNumber) + "/" + to_string(numberOfWaves));
                         waveButtonSprite->setTexture(buttonWaveRunningTexture);
@@ -761,16 +1230,18 @@ void Game::processEvents() {
         // Klawiatura
         if (auto keyEvent = event->getIf<sf::Event::KeyPressed>()) {
             switch (keyEvent->code) {
-            case sf::Keyboard::Key::Escape:
-                isRunning = false;
-                window.close();
-                break;
+            //case sf::Keyboard::Key::Escape:
+            //    isRunning = false;
+            //    window.close();
+            //    break;
             case sf::Keyboard::Key::R:
                 showAllRanges = !showAllRanges;
                 for (auto& tower : towers) {
                     tower.toggleRangeDisplay(showAllRanges);
                 }
                 break;
+            case sf::Keyboard::Key::Escape:
+                inGameMenuActive = !inGameMenuActive;
             default:
                 break;
             }
@@ -829,11 +1300,41 @@ void Game::openTowerActionMenu(int towerIndex) {
 
     upgradeButtonSprite->setPosition({ towerActionCenter.x - offset, towerActionCenter.y });
     destroyButtonSprite->setPosition({ towerActionCenter.x + offset, towerActionCenter.y });
+
+    updateUpgradeCostUI();
 }
 
 void Game::closeTowerActionMenu() {
     towerActionMenuActive = false;
     selectedTowerIndex = -1;
+    upgradeCostText.setString("");
+}
+
+void Game::updateUpgradeCostUI() {
+    if (!towerActionMenuActive || selectedTowerIndex < 0 || selectedTowerIndex >= static_cast<int>(towers.size())) {
+        upgradeCostText.setString("");
+        return;
+    }
+
+    if (!upgradeButtonSprite) {
+        upgradeCostText.setString("");
+        return;
+    }
+
+    const Tower& t = towers[selectedTowerIndex];
+    if (!t.canUpgrade() || t.getLevel() >= 4) {
+        upgradeCostText.setString("MAX");
+    } else {
+        upgradeCostText.setString(std::to_string(t.getUpgradeCost()));
+    }
+
+    // center under the upgrade button
+    auto bounds = upgradeCostText.getLocalBounds();
+    upgradeCostText.setOrigin({ bounds.position.x + bounds.size.x / 2.0f, bounds.position.y + bounds.size.y / 2.0f });
+
+    const sf::FloatRect btn = upgradeButtonSprite->getGlobalBounds();
+    const sf::Vector2f btnCenter(btn.position.x + btn.size.x / 2.0f, btn.position.y + btn.size.y / 2.0f);
+    upgradeCostText.setPosition({ btnCenter.x, btnCenter.y + btn.size.y / 2.0f + 18.0f });
 }
 
 void Game::tryUpgradeSelectedTower() {
@@ -868,6 +1369,7 @@ void Game::tryUpgradeSelectedTower() {
     PlayerCoins -= cost;
     CoinsText.setString(std::to_string(PlayerCoins));
     CoinsText.setOrigin({ CoinsText.getLocalBounds().size.x / 2.0f, CoinsText.getLocalBounds().size.y / 2.0f });
+	soundManager.playTowerUpgradeSound();
     t.upgrade();
 
     // Update level icon texture for this tower
@@ -878,6 +1380,8 @@ void Game::tryUpgradeSelectedTower() {
 		else if (lvl == 4) levelIcons[selectedTowerIndex]->setTexture(level4Texture);
         else levelIcons[selectedTowerIndex]->setTexture(level1Texture);
     }
+
+    updateUpgradeCostUI();
 }
 
 void Game::destroySelectedTower() {
@@ -971,6 +1475,7 @@ static void applyDamageToPlayer(EnemyType type, int& PlayerHP, sf::Text& HPText)
     case EnemyType::LIGHT_PLANE: damage = 8; break;
     case EnemyType::MEDIUM_PLANE: damage = 12; break;
     case EnemyType::HEAVY_PLANE: damage = 18; break;
+	case EnemyType::BOSS: damage = 50; break;
     }
     PlayerHP -= damage;
     if (PlayerHP < 0) PlayerHP = 0;
@@ -978,6 +1483,14 @@ static void applyDamageToPlayer(EnemyType type, int& PlayerHP, sf::Text& HPText)
 }
 
 void Game::update(float deltaTime) {
+    if (gameState == GameState::MAIN_MENU) {
+        logOnce("[MENU] update() in MAIN_MENU");
+        const sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
+        const sf::Vector2f mousePos(static_cast<float>(pixelPos.x), static_cast<float>(pixelPos.y));
+        (void)mainMenu.update(mousePos, false);
+        return;
+    }
+
     // Aktualizacja fal i generowanych przeciwników
     const auto& path1 = map.getPathPoints();
     const auto& path2 = map.getPathPoints2();
@@ -1025,7 +1538,15 @@ void Game::update(float deltaTime) {
         if (target && tower.canFire()) {
             sf::Vector2f dir = target->getPosition() - tpos;
             tower.rotateToDirection(dir);
-            auto proj = makeProjectileForTower(tower.getType(), tpos, dir, bulletTextures, tower.getDamage(), range);
+
+            float explosionRadius = 0.0f;
+            float edgeMult = 1.0f;
+            if (tower.getType() == TowerType::ARTILLERY) {
+                explosionRadius = tower.getExplosionRadius();
+                edgeMult = tower.getEdgeDamageMultiplier();
+            }
+
+            auto proj = makeProjectileForTower(tower.getType(), tpos, dir, bulletTextures, tower.getDamage(), range, explosionRadius, edgeMult);
             if (tower.getType() == TowerType::AA_GUN) {
                 soundManager.playAAshootSound();
             } else if (tower.getType() == TowerType::ARTILLERY) {
@@ -1034,7 +1555,7 @@ void Game::update(float deltaTime) {
                 soundManager.playMGshootSound();
             } else if (tower.getType() == TowerType::INFANTRY_POST) {
                 soundManager.playIPshootSound();
-			}
+            }
             projectiles.push_back(std::move(proj));
             tower.resetCooldown();
         } else if (target) {
@@ -1058,13 +1579,51 @@ void Game::update(float deltaTime) {
             float dy = ePtr->getPosition().y - p->getPosition().y;
             float dist2 = dx*dx + dy*dy;
             if (dist2 < 20.0f * 20.0f) {
-                ePtr->takeDamage(p->getDamage());
+                // direct hit or proximity hit
+                if (p->hasExplosion()) {
+                    const float R = p->getExplosionRadius();
+                    const float edgeMult = p->getEdgeDamageMultiplier();
+                    const sf::Vector2f center = p->getPosition();
+
+                    // Spawn VFX (range indicator) once per impact
+                    if (!explosionFrames.empty()) {
+                        explosionEffects.emplace_back(center, R, explosionFrames, 0.06f);
+                    }
+
+                    // Apply AoE once at impact position: linear falloff from 1.0 at center to edgeMult at radius.
+                    for (auto& aoeEnemy : enemies) {
+                        if (!aoeEnemy) continue;
+                        sf::Vector2f ep = aoeEnemy->getPosition();
+                        float ax = ep.x - center.x;
+                        float ay = ep.y - center.y;
+                        float d2a = ax*ax + ay*ay;
+                        if (d2a > R * R) continue;
+
+                        float d = std::sqrt(d2a);
+                        float t = (R > 0.0f) ? (d / R) : 1.0f; // 0..1
+                        float mult = (1.0f - t) * 1.0f + t * edgeMult;
+                        if (mult < 0.0f) mult = 0.0f;
+
+                        int dealt = static_cast<int>(std::round(p->getDamage() * mult));
+                        if (dealt > 0) aoeEnemy->takeDamage(dealt);
+                    }
+                } else {
+                    ePtr->takeDamage(p->getDamage());
+                }
+
                 it = projectiles.erase(it);
                 removed = true;
                 break;
             }
         }
         if (!removed) ++it;
+    }
+
+    // Update explosion effects
+    for (auto it = explosionEffects.begin(); it != explosionEffects.end();) {
+        it->update(deltaTime);
+        if (!it->isAlive()) it = explosionEffects.erase(it);
+        else ++it;
     }
 
     // Aktualizacja przeciwników
@@ -1101,6 +1660,7 @@ void Game::update(float deltaTime) {
             showMaxLevelMessage = false;
         }
     }
+
 }
 
 void Game::HPTextUpdate() {
@@ -1124,7 +1684,14 @@ void Game::HPTextUpdate() {
 }
 
 void Game::render() {
-    
+    if (gameState == GameState::MAIN_MENU) {
+        logOnce("[MENU] render() in MAIN_MENU");
+        window.clear(sf::Color::Black);
+        mainMenu.draw(window);
+        window.display();
+        return;
+    }
+
     const sf::Texture& bgTex = map.getBackgroundTexture();
     sf::Sprite backgroundSprite(bgTex);
     window.clear(sf::Color::Black);
@@ -1142,20 +1709,26 @@ void Game::render() {
     for (const auto& e : enemies) {
         e->draw(window);
     }
-    for (const auto& p : projectiles) p->draw(window);
 
-    // Draw UI (on top) and creating Sprite for HUD
-    if (hudSprite) { // Check if hudSprite is valid
+    // Projectiles and explosion VFX (VFX drawn above enemies, below UI)
+    for (const auto& p : projectiles) p->draw(window);
+    for (const auto& fx : explosionEffects) fx.draw(window);
+
+    // Draw UI (on top)
+    // IMPORTANT: only draw sprites created from valid textures.
+    if (hudTexture.getSize().x > 0 && hudTexture.getSize().y > 0) {
         sf::Sprite hudSpriteLocal(hudTexture);
         hudSpriteLocal.setPosition({ (float)window.getSize().x - (float)hudTexture.getSize().x, 0.0f});
         window.draw(hudSpriteLocal);
     }
-	sf::Sprite statsTableSpriteLocal(statsTableTexture);
-    statsTableSpriteLocal.setOrigin({ (float)statsTableTexture.getSize().x / 2.0f, (float)statsTableTexture.getSize().y / 2.0f });
-	statsTableSpriteLocal.setPosition({ (float)window.getSize().x - ((float)statsTableTexture.getSize().x / 2.0f), (float)window.getSize().y - ((float)statsTableTexture.getSize().y / 2.0f)});
 
-	window.draw(statsTableSpriteLocal);
+    sf::Sprite statsTableSpriteLocal(statsTableTexture);
+    statsTableSpriteLocal.setOrigin({ (float)statsTableTexture.getSize().x / 2.0f, (float)statsTableTexture.getSize().y / 2.0f });
+    statsTableSpriteLocal.setPosition({ (float)window.getSize().x - ((float)statsTableTexture.getSize().x / 2.0f), (float)window.getSize().y - ((float)statsTableTexture.getSize().y / 2.0f)});
+
+    window.draw(statsTableSpriteLocal);
 	window.draw(WaveText);
+	window.draw(MapNameText);
 
     // Draw wave button
     if (waveButtonSprite)
@@ -1205,6 +1778,9 @@ void Game::render() {
             window.draw(*upgradeButtonSprite);
         if (destroyButtonSprite)
             window.draw(*destroyButtonSprite);
+
+        if (upgradeCostText.getString().getSize() > 0)
+            window.draw(upgradeCostText);
     }
 
     // End screens
@@ -1215,12 +1791,50 @@ void Game::render() {
         }
         if (!victory && defeatSprite) {
             window.draw(*defeatSprite);
+            window.draw(MapNameTextBigger);
+            window.draw(*mainMenuEndButtonSprite);
             if (repeatButtonSprite)
                 window.draw(*repeatButtonSprite);
         } else if (victory && victorySprite) {
             window.draw(*victorySprite);
+            window.draw(MapNameTextBigger);
+            window.draw(*mainMenuEndButtonSprite);
             if (continueButtonSprite)
                 window.draw(*continueButtonSprite);
+        }
+    }
+
+    if (inGameMenuActive) {
+        // In-game menu background setup
+        RectangleShape inGameMenuBackground;
+        inGameMenuBackground.setFillColor(sf::Color(0, 0, 0, 150)); // pó³przezroczyste czarne t³o
+        inGameMenuBackground.setSize(sf::Vector2f((float)window.getSize().x, (float)window.getSize().y));
+        inGameMenuBackground.setPosition({ 0.0f, 0.0f });
+		window.draw(inGameMenuBackground);
+
+        // If guidebook active, draw it instead of pause panel/buttons
+        if (guidebookActive) {
+            if (guidebookSprite)
+                window.draw(*guidebookSprite);
+            if (changePageButtonSprite)
+                window.draw(*changePageButtonSprite);
+            if (backFromGuideButtonSprite)
+                window.draw(*backFromGuideButtonSprite);
+        } else {
+            if (inGameMenuSprite)
+				window.draw(*inGameMenuSprite);
+			window.draw(MapNameTextBigger);
+            // Draw buttons
+            if (resumeButtonSprite)
+                window.draw(*resumeButtonSprite);
+            if (restartButtonSprite)
+                window.draw(*restartButtonSprite);
+            if (mainMenuButtonSprite)
+                window.draw(*mainMenuButtonSprite);
+            if (soundButtonSprite)
+				window.draw(*soundButtonSprite);
+            if (helpButtonSprite)
+                window.draw(*helpButtonSprite);
         }
     }
 
@@ -1283,5 +1897,39 @@ void Game::goToNextMap() {
     // restore wave button texture
     if (waveButtonSprite)
         waveButtonSprite->setTexture(buttonWaveStartTexture);
+}
+
+void Game::startPlayingMap(int index) {
+    // reset run-time state (same as restarting a level, but selecting a potentially different one)
+    towers.clear();
+    enemies.clear();
+    projectiles.clear();
+    levelIcons.clear();
+    closeTowerMenu();
+    closeTowerActionMenu();
+    towerMenuActive = false;
+    towerActionMenuActive = false;
+
+    // Clear map paths/build areas to avoid duplicates
+    map.clearPathsAndBuildAreas();
+
+    // Reset player HP and HUD
+    PlayerHP = 100;
+    HPText.setString(std::to_string(PlayerHP) + "/100");
+    HPText.setOrigin({ HPText.getLocalBounds().size.x / 2.0f, HPText.getLocalBounds().size.y / 2.0f });
+
+    // Load the chosen map data
+    loadMapByIndex(index);
+
+    // restore wave button texture
+    if (waveButtonSprite)
+        waveButtonSprite->setTexture(buttonWaveStartTexture);
+
+    // Apply menu audio settings
+    const GameSettings gs = mainMenu.getSettings();
+    soundManager.setBackgroundVolume(gs.volume);
+
+    // switch state
+    gameState = GameState::PLAYING;
 }
 

@@ -7,7 +7,10 @@ SoundManager::SoundManager()
 	IPshootSound(IPshootBuffer),
 	MGshootSound(MGshootBuffer),
 	ARTshootSound(ARTshootBuffer),
-	AAshootSound(AAshootBuffer)
+	AAshootSound(AAshootBuffer),
+	towerUpgradeSound(towerUpgradeBuffer),
+	startWaveSound(startWaveBuffer),
+	pageFlipSound(pageFlipBuffer)
 {
 	if (!MouseClickBuffer.loadFromFile("sounds/mouse_click.ogg")) {
 		cerr << "Nie mozna za³adowaæ dŸwiêku: assets/sounds/mouse_click.wav" << '\n';
@@ -29,6 +32,15 @@ SoundManager::SoundManager()
 	}
 	if (!AAshootBuffer.loadFromFile("sounds/shooting/AA.mp3")) {
 		cerr << "Nie mozna za³adowaæ dŸwiêku: assets/sounds/AA_shoot.wav" << '\n';
+	}
+	if(!towerUpgradeBuffer.loadFromFile("sounds/tower_upgrade.mp3")) {
+		cerr << "Nie mozna za³adowaæ dŸwiêku: assets/sounds/tower_upgrade.wav" << '\n';
+	}
+	if(!startWaveBuffer.loadFromFile("sounds/start_wave.mp3")) {
+		cerr << "Nie mozna za³adowaæ dŸwiêku: assets/sounds/start_wave.mp3" << '\n';
+	}
+	if(!pageFlipBuffer.loadFromFile("sounds/page_flip.mp3")) {
+		cerr << "Nie mozna za³adowaæ dŸwiêku: assets/sounds/page_flip.mp3" << '\n';
 	}
 	MouseClickSound.setVolume(15.0f);
 	AAshootSound.setVolume(50.0f);
@@ -59,6 +71,9 @@ void SoundManager::playAAshootSound() {
 void SoundManager::playClickSound() {
 	MouseClickSound.play();
 }
+void SoundManager::playPageFlipSound() {
+	pageFlipSound.play();
+}
 
 bool SoundManager::playBackground(const std::string& file, bool loop, float volume) {
 	if (!backgroundMusic.openFromFile(file)) {
@@ -77,4 +92,10 @@ void SoundManager::stopBackground() {
 
 void SoundManager::setBackgroundVolume(float volume) {
 	backgroundMusic.setVolume(volume);
+}
+void SoundManager::playTowerUpgradeSound() {
+	towerUpgradeSound.play();
+}
+void SoundManager::playStartWaveSound() {
+	startWaveSound.play();
 }
