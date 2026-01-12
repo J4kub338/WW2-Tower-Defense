@@ -4,7 +4,7 @@
 #include <sstream>
 #include <memory>
 
-#define MAP_DEBUG //okdomentuj by w³¹czyæ debugowanie
+//#define MAP_DEBUG //okdomentuj by w³¹czyæ debugowanie
 
 
 Map::Map() = default; // unique_ptr domyœlnie nullptr
@@ -17,7 +17,7 @@ void Map::addPathPoint(float x, float y) {
 	sf::CircleShape point;
 	point.setRadius(5.0f);
 	point.setOrigin({ 5.0f, 5.0f }); // œrodek kó³ka w (x,y)
-	point.setFillColor(sf::Color::Red);
+	point.setFillColor(Color(0, 0, 0, 0));//dla wizualizacji zmieniæ na Color::Red
 	point.setPosition({ x, y });
 	pathVisual.push_back(point);
 }
@@ -34,7 +34,7 @@ void Map::addPathPoint2(float x, float y) {
 	sf::CircleShape point;
 	point.setRadius(5.0f);
 	point.setOrigin({ 5.0f, 5.0f });
-	point.setFillColor(sf::Color::Red);
+	point.setFillColor(Color(0,0,0,0));
 	point.setPosition({ x, y });
 	pathVisual.push_back(point);
 }
@@ -105,7 +105,17 @@ void Map::draw(sf::RenderWindow& window) const {
 }
 
 // £adowanie danych mapy z pliku
+void Map::clearPathsAndBuildAreas()
+{
+    pathpoints.clear();
+    pathpoints2.clear();
+    buildAreas.clear();
+    pathVisual.clear();
+}
+
 bool Map::loadFromFile(const std::string& filename) {
+	clearPathsAndBuildAreas();
+
 #ifdef MAP_DEBUG
 	int i = 1;
 #endif
@@ -163,4 +173,40 @@ bool Map::loadFromFile(const std::string& filename) {
 
 	file.close();
 	return true;
+}
+
+bool Map::getBuildAreaCenter(const Vector2f& position, Vector2f& outCenter) const {
+    for (const auto& area : buildAreas) {
+        if (area.shape.getGlobalBounds().contains(position)) {
+            const auto rect = area.shape.getGlobalBounds();
+            outCenter = { rect.position.x + rect.size.x / 2.0f, rect.position.y + rect.size.y / 2.0f };
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Map::occupyBuildAreaAtCenter(const Vector2f& center) {
+    for (auto& area : buildAreas) {
+        const auto rect = area.shape.getGlobalBounds();
+        const Vector2f areaCenter{ rect.position.x + rect.size.x / 2.0f, rect.position.y + rect.size.y / 2.0f };
+        if (std::abs(areaCenter.x - center.x) < 1.0f && std::abs(areaCenter.y - center.y) < 1.0f) {
+            if (area.occupied) return false;
+            area.occupied = true;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Map::freeBuildAreaAtCenter(const Vector2f& center) {
+    for (auto& area : buildAreas) {
+        const auto rect = area.shape.getGlobalBounds();
+        const Vector2f areaCenter{ rect.position.x + rect.size.x / 2.0f, rect.position.y + rect.size.y / 2.0f };
+        if (std::abs(areaCenter.x - center.x) < 1.0f && std::abs(areaCenter.y - center.y) < 1.0f) {
+            area.occupied = false;
+            return true;
+        }
+    }
+    return false;
 }

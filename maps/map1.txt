@@ -5,7 +5,7 @@
 # PATH2 <x> <y>
 # BUILD_AREA <x> <y> <width> <height>
 
-BACKGROUND maps\png\map5.png
+BACKGROUND maps\png\map1.png
 
 PATH 0 226
 PATH 608 226

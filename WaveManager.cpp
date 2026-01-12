@@ -41,7 +41,8 @@ void WaveManager::stopCurrentWave() {
 void WaveManager::update(float deltaTime,
     std::vector<std::unique_ptr<Enemy>>& enemies,
     const std::vector<sf::Vector2f>& path1,
-    const std::vector<sf::Vector2f>& path2) {
+    const std::vector<sf::Vector2f>& path2,
+    const std::string& enemyTexturePrefix) {
 
     if (!isSpawning) return;
 
@@ -59,7 +60,8 @@ void WaveManager::update(float deltaTime,
 
         // spawn it
         const std::vector<sf::Vector2f>& chosenPath = (task.pathIndex == 0) ? path1 : path2;
-        enemies.emplace_back(std::make_unique<Enemy>(task.type, chosenPath));
+        // Pass the enemyTexturePrefix to the Enemy constructor
+        enemies.emplace_back(std::make_unique<Enemy>(task.type, chosenPath, task.pathIndex, enemyTexturePrefix));
 
         spawnTimer -= task.interval;
         enemiesToSpawn.pop();
